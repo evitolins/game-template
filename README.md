@@ -63,7 +63,7 @@ Below are a few common __asset types__ and corresponding __file structures__ to 
 
 Store final game engine code and copied exports from asset output (or referenced, if possible).
 
-*For Unity projects the game directory will be named `/unity/` , and the internal struture determined by the software.*
+> Note: For Unity projects, the game directory will be named `/unity/`, and the internal struture determined by the software.*
 
 
 
@@ -97,9 +97,9 @@ Advanced Usage
 
 During game development, it will be a common need to store and share large files within a repo.  For this we use “git-lfs” technology.  If you have a filetype that is likely to exceed a few megabytes, we should set git-lfs to *automatically* handle its type and store it properly.
 
-*See below for an example.*
+> __IMPORTANT:__ Please check with the tech team to make sure your Git LFS is setup properly on your workstation.  Otherwise, problems can occur and might disrupt the workflow of the entire team.
 
-> If you are not comfortable setting up new file extensions for git-lfs, please feel free to ask for help in the #help Slack Channel.
+> Note: If you are not comfortable editing `.gitattributes` to include new file extensions for git-lfs, please feel free to ask for help in the #help Slack Channel.
 
 
 
