@@ -1,6 +1,8 @@
 ###############################################################################
 # Referenced, but not copied from:
 # https://gist.github.com/tinjaw/5a0980ffdea307834c5f2af7c69fd9a2
+#
+# Note: Try to keep groupings listed in alphabetical order.
 ###############################################################################
 
 # Image
@@ -37,6 +39,8 @@
 *.blend filter=lfs diff=lfs merge=lfs -text
 *.dxf filter=lfs diff=lfs merge=lfs -text
 *.fbx filter=lfs diff=lfs merge=lfs -text
+*.ma filter=lfs diff=lfs merge=lfs -text
+*.mb filter=lfs diff=lfs merge=lfs -text
 *.obj filter=lfs diff=lfs merge=lfs -text
 *.ztl filter=lfs diff=lfs merge=lfs -text
 
