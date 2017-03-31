@@ -6,14 +6,15 @@
 # 0. Check if Bash version is supported
 # 1. Check if Git version is supported
 # 2. Check if LFS version is supported
-#   2a. Collect LFS Tracking Extensions
-#   2b. Check if LFS hooks are properly installed
-# 4. Block files larger than X from being committed without using LFS
-# 5. Check if .gitattributes has been edited
-#     - if so, make sure the newly tracked files/exts had never been commmitted before
-#     - warn user that these changes probably require a REPO rebuild to avoid future errors
-# 6. Check if files contain an uppercase extension
-#     - if so, stop the commit and suggest renaming the files before committing
+#    - 2a. Collect LFS Tracking Extensions
+#    - 2b. Check if LFS hooks are properly installed
+# 3. Block files larger than X from being committed without using LFS
+# 4. Check if .gitattributes has been edited
+#     - 4a. Require the .gitattributes changes be staged for commit
+#     - 4b. Check repo history for previously committed/untracked files of the newly tracked extensions
+#       - Warn user that these changes probably require a REPO rebuild to avoid future errors
+# 5. Check if files contain an uppercase extension
+#     - 5a. if so, stop the commit and suggest renaming the files before committing
 
 
 # Helpful snippets:
@@ -86,7 +87,6 @@ unmunge()
     echo "$result"
 }
 
-
 check_file_size()
 {
     n=0
@@ -114,6 +114,12 @@ check_file_size()
     return $n
 }
 
+# http://stackoverflow.com/questions/8063228/how-do-i-check-if-a-variable-exists-in-a-list-in-bash
+contains() {
+    [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]] && exit 0 || exit 1
+}
+
+
 
 
 # File Size Limits
@@ -140,7 +146,6 @@ icon_info="${BLD}\xE2\x84\xB9 INFO:${N}"
 icon_positive="${G}\xE2\x9C\x94 SUCCESS:${N}"
 icon_warning="${Y}\xE2\x9A\xA0 WARNING:${N}"
 icon_negative="${R}\xE2\x9C\x98 FAILED:${N}"
-icon_beer="${Y}\xF0\x9F\x8D\xBA EXTRA CREDIT:${N}"
 icon_mugs="${Y}\xF0\x9F\x8D\xBB CHEERS!:${N}"
 
 
@@ -170,6 +175,13 @@ commit_failure ()
     echo -e "${R}Your commit has failed. ${BLD}Please review the messages above for suggestions to fix the issues.${N}"
     echo ""
     exit 1
+}
+
+commit_success ()
+{
+    echo ""
+    echo -e "${icon_mugs} ${G}Your commit was successful! ${BLD}Carry on my wayward son...${N}"
+    echo ""
 }
 
 
@@ -251,6 +263,11 @@ fi
 
 #######################################
 # 3) Block files larger than X from being committed without using LFS
+# 
+#    Because the LFS-tracked file size returned is actually the size of the
+#    pointer file instead.  You can assume any file size listed over ~130b is
+#    not being tracked.
+#    
 echo -e "${BLD}3. Block files larger than ${hard_limit_human} from being committed without using LFS${N}"
 list_new_or_modified_files | check_file_size
 files_too_large=$?
@@ -300,7 +317,7 @@ echo -e "${BLD}4b. Check repo history for previously committed/untracked files o
 
 #######################################
 # 5) Check if files contain an uppercase extension
-#     - if so, stop the commit and suggest renaming the files before committing
+#     - 5a. if so, stop the commit and suggest renaming the files before committing
 echo -e "${BLD}5. Check if files contain an uppercase extension${N}"
 while read status_feed
 do
@@ -319,5 +336,14 @@ do
 done < <(git lfs status --porcelain)
 
 
+
+#######################################
+# SUCCESS
+commit_success
+
+
+
+
+
 # BLOCK COMMIT SUCCESS FOR TESTING
-exit 1
+echo -e "p.s. - Just kidding, commit success is disabled for testing.\n"; exit 1;
