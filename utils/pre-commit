@@ -263,9 +263,38 @@ fi
 
 #######################################
 # 4) Check if .gitattributes has been edited
-#     - if so, make sure the newly tracked files/exts had never been commmitted before
-#     - warn user that these changes probably require a REPO rebuild to avoid future errors
+#     - 4a. Require the .gitattributes changes be staged for commit
+#     - 4b. Check history for repo, and see if the extension has been previously committed, untracked sure the newly tracked files/exts had never been commmitted before
+#     - 4c. warn user that these changes probably require a REPO rebuild to avoid future errors
+
+# NOTE: Must check .gitattributes, even if it's not staged, as LFS will use
+# .gitattributes as it exists in the working directory.
+#
 echo -e "${BLD}4. Check if .gitattributes has been edited${N}"
+while read status_feed
+do
+    f=$(echo $status_feed | awk '{print $2}')
+    filename=$(basename "$f")
+    path_no_extension="${f%.*}"
+    if [[ $filename = ".gitattributes" ]] ;
+    then
+        echo -e "   $icon_warning $f has been edited"
+        echo -e "      $icon_info $f this file must be staged."
+    fi
+done < <(git status --porcelain)
+
+# 4a. Require the .gitattributes changes be staged for commit
+echo -e "${BLD}4a. Require the .gitattributes changes be staged for commit${N}"
+# SADNESS: I CAN NOT GET `git ls-files --modified` to return any data, yet `git ls-files` will.
+# while read unstaged_files
+# do
+#     f=$unstaged_files
+#     filename=$(basename "$f")
+#     echo -e "$unstaged_files"
+# done < <(git ls-files --modified)
+
+
+echo -e "${BLD}4b. Check repo history for previously committed/untracked files of the newly tracked extensions${N}"
 
 
 
