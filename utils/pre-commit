@@ -1,8 +1,5 @@
 #!/usr/bin/env bash
 
-set -e
-
-
 # STORE THESE UTILITIES EXTERNALLY
 # http://stackoverflow.com/questions/4023830/how-compare-two-strings-in-dot-separated-version-format-in-bash
 # 0 : =
@@ -54,9 +51,9 @@ vercomp_char () {
 
 
 # http://stackoverflow.com/questions/39576257/how-to-limit-file-size-on-commit
-hard_limit=2097152
-hard_limit=1048576
-soft_limit=1048576
+MB=1048576
+hard_limit=$(($MB*2))
+soft_limit=$(($MB*1))
 hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
 soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
 
@@ -69,8 +66,9 @@ unmunge()
 {
     local result="${1#\"}"
     result="${result%\"}"
-    env echo "$result"
+    echo "$result"
 }
+
 
 check_file_size()
 {
@@ -81,17 +79,21 @@ check_file_size()
         h=$(git ls-files -s "$f"|cut -d' ' -f 2)
         s=$(git cat-file -s "$h")
         s_human=$(echo $s| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
+        filename=$(basename "$f")
+        ext="${filename##*.}"
+
         if [ "$s" -gt $hard_limit ]
         then
-            echo -e "   $icon_negative hard size limit ($hard_limit_human) exceeded: $munged_filename ($s_human)"
+            echo -e "   $icon_negative Exceeded hard size limit ($hard_limit_human): $munged_filename ($s_human)"
+            echo -e "      $icon_info You must track this extension. Run \`git lfs track \"*.${ext}\"\` before proceeding."
             n=$((n+1))
         elif [ "$s" -gt $soft_limit ]
         then
-            echo -e "   $icon_warning soft size limit ($soft_limit_human) exceeded: $munged_filename ($s_human)"
+            echo -e "   $icon_warning Exceeded soft size limit ($soft_limit_human): $munged_filename ($s_human)"
+            echo -e "      $icon_info Please consider tracking this extension using \`git lfs track \"*.${ext}\"\`"
         fi
     done
 
-    # [ $n -eq 0 ]
     return $n
 }
 
@@ -104,19 +106,19 @@ check_file_size()
 # Colors
 # http://misc.flogisoft.com/bash/tip_colors_and_formatting
 G="\033[1;32m" # Green
-GY="\033[1;90m" # Gray
+GY="\033[1;93m" # Gray
 Y="\033[1;93m" # Yellow 
 R="\033[1;31m" # Red
-BLD="\033[1;1m"
+BLD="\033[1;1m" #BOLD
 N="\033[0m" # ~reset~
 
 # Icons
-icon_positive="${G}\xE2\x9C\x94${N} SUCCESS:"
-icon_neutral="\xE2\x80\x90"
-icon_warning="${Y}\xE2\x9A\xA0${N} WARNING:"
-icon_negative="${R}\xE2\x9C\x98${N} FAILED:"
-icon_beer="${Y}\xF0\x9F\x8D\xBA${N} EXTRA CREDIT:"
-icon_mugs="${Y}\xF0\x9F\x8D\xBB${N} CHEERS!:"
+icon_info="${BLD}\xE2\x84\xB9 INFO:${N}"
+icon_positive="${G}\xE2\x9C\x94 SUCCESS:${N}"
+icon_warning="${Y}\xE2\x9A\xA0 WARNING:${N}"
+icon_negative="${R}\xE2\x9C\x98 FAILED:${N}"
+icon_beer="${Y}\xF0\x9F\x8D\xBA EXTRA CREDIT:${N}"
+icon_mugs="${Y}\xF0\x9F\x8D\xBB CHEERS!:${N}"
 
 
 # Checklist:
@@ -125,7 +127,7 @@ icon_mugs="${Y}\xF0\x9F\x8D\xBB${N} CHEERS!:"
 # 1) Check if Git version is supported
 # 2) Check if LFS version is supported
 # 3) Check if LFS hooks are properly installed
-# 4) Check if files committed are larger than X, and not tracked via LFS
+# 4) Block files larger than X from being committed without using LFS
 # 5) Check if .gitattributes has been edited
 #     - if so, make sure the newly tracked files/exts had never been commmitted before
 #     - warn user that these changes probably require a REPO rebuild to avoid future errors
@@ -209,7 +211,7 @@ then
     lfsTrackedExtsArr=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort)
     lfsTrackedExts=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort | paste -sd "," -)
     echo -e "   $icon_positive .gitattributes found"
-    echo "   - $lfsTrackedExtsCount tracked extensions found"
+    echo -e "   $icon_info $lfsTrackedExtsCount tracked extensions found"
     # # Echo each extension
     # for i in $lfsTrackedExtsArr
     # do
@@ -224,34 +226,18 @@ else
     lfsTrackedExts=""
 fi
 
-# 4) Check if files committed are larger than X, and not tracked via LFS
-echo -e "${BLD}Check if files committed are larger than X, and not tracked via LFS${N}"
-git_status=$(git status --porcelain)
-git_status_lines=$(git status --porcelain | wc -l)
-git_status_status=$(git status --porcelain | awk '{print $1}')
-git_status_files=$(git status --porcelain | awk '{print $2}')
-
-
-# for x in $(seq 0 2 $git_status_lines)
-# do
-#    a=$x
-#    b=$(($x+1))
-#    echo $(echo ${git_status} | cut -f 2- -d :| awk '{print $1}')
-#    echo $(echo ${git_status} | cut -f 2- -d :| awk '{print $2}')
-#    echo "      - $a $b"
-# done
-
+# 4) Block files larger than X from being committed without using LFS
+echo -e "${BLD}Block files larger than ${hard_limit_human} from being committed without using LFS${N}"
 list_new_or_modified_files | check_file_size
-echo $?
+files_too_large=$?
 
-# echo $git_status_status
-# echo $git_status_files
-# for i in $git_status
-# do
-#    echo "      - $i"
-# done
+echo $n
 
+if [ $files_too_large -gt 0 ]; then
+    echo -e "$icon_negative We need to talk about your TPS reports."
+fi
 
+# echo "--------------"
 exit 1
 
 # Use git diff-index to check for whitespace errors
