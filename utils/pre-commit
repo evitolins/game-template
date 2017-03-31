@@ -102,12 +102,12 @@ check_file_size()
         if [ "$s" -gt $hard_limit ]
         then
             echo -e "   $icon_negative Exceeded hard size limit ($hard_limit_human): $munged_filename ($s_human)"
-            echo -e "      $icon_info You must track this extension. Run \`git lfs track \"*.${ext}\"\` before proceeding."
+            echo -e "      $icon_info You must track this extension. Run ${CODE} git lfs track \"*.${ext}\" ${N} before proceeding."
             n=$((n+1))
         elif [ "$s" -gt $soft_limit ]
         then
             echo -e "   $icon_warning Exceeded soft size limit ($soft_limit_human): $munged_filename ($s_human)"
-            echo -e "      $icon_info Please consider tracking this extension using \`git lfs track \"*.${ext}\"\`"
+            echo -e "      $icon_info Please consider tracking this extension using ${CODE} git lfs track \"*.${ext}\" ${N}"
         fi
     done
 
@@ -132,6 +132,8 @@ Y="\033[1;93m" # Yellow
 R="\033[1;31m" # Red
 BLD="\033[1;1m" #BOLD
 N="\033[0m" # ~reset~
+
+CODE="\033[1;93;100m" # Fill Dark Gray
 
 # Icons
 icon_info="${BLD}\xE2\x84\xB9 INFO:${N}"
@@ -282,7 +284,7 @@ do
     if [[ $ext =~ [A-Z] ]] ;
     then
         echo -e "   $icon_negative $f can not have an uppercase file extension." 
-        echo -e "      $icon_info please rename using \`git mv $f ${path_no_extension}.${ext_lowercase}\`" 
+        echo -e "      $icon_info please rename using ${CODE} git mv $f ${path_no_extension}.${ext_lowercase} ${N}" 
         commit_failure
     fi
 done < <(git lfs status --porcelain)
