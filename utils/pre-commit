@@ -52,27 +52,78 @@ vercomp_char () {
     echo $op
 }
 
+
+# http://stackoverflow.com/questions/39576257/how-to-limit-file-size-on-commit
+hard_limit=2097152
+hard_limit=1048576
+soft_limit=1048576
+hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
+soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
+
+list_new_or_modified_files()
+{
+    git diff --staged --name-status|sed -e '/^D/ d; /^D/! s/.\s\+//'| awk '{print $2}'
+}
+
+unmunge()
+{
+    local result="${1#\"}"
+    result="${result%\"}"
+    env echo "$result"
+}
+
+check_file_size()
+{
+    n=0
+    while read -r munged_filename
+    do
+        f=$(unmunge "$munged_filename")
+        h=$(git ls-files -s "$f"|cut -d' ' -f 2)
+        s=$(git cat-file -s "$h")
+        s_human=$(echo $s| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
+        if [ "$s" -gt $hard_limit ]
+        then
+            echo -e "   $icon_negative hard size limit ($hard_limit_human) exceeded: $munged_filename ($s_human)"
+            n=$((n+1))
+        elif [ "$s" -gt $soft_limit ]
+        then
+            echo -e "   $icon_warning soft size limit ($soft_limit_human) exceeded: $munged_filename ($s_human)"
+        fi
+    done
+
+    # [ $n -eq 0 ]
+    return $n
+}
+
+
+
+
+
+
+
 # Colors
 # http://misc.flogisoft.com/bash/tip_colors_and_formatting
 G="\033[1;32m" # Green
 GY="\033[1;90m" # Gray
 Y="\033[1;93m" # Yellow 
 R="\033[1;31m" # Red
+BLD="\033[1;1m"
 N="\033[0m" # ~reset~
 
 # Icons
-icon_positive="${G}\xE2\x9C\x94${N}"
+icon_positive="${G}\xE2\x9C\x94${N} SUCCESS:"
 icon_neutral="\xE2\x80\x90"
-icon_warning="${Y}\xE2\x9A\xA0${N}"
-icon_negative="${R}\xE2\x9C\x98${N}"
-icon_beer="${Y}\xF0\x9F\x8D\xBA${N}"
-icon_mugs="${Y}\xF0\x9F\x8D\xBB${N}"
+icon_warning="${Y}\xE2\x9A\xA0${N} WARNING:"
+icon_negative="${R}\xE2\x9C\x98${N} FAILED:"
+icon_beer="${Y}\xF0\x9F\x8D\xBA${N} EXTRA CREDIT:"
+icon_mugs="${Y}\xF0\x9F\x8D\xBB${N} CHEERS!:"
 
 
 # Checklist:
 # 
-# 1) Check if Git version is "correct"/expected
-# 2) Check if LFS version is "correct"/expected
+# 0) Check if Bash version is supported
+# 1) Check if Git version is supported
+# 2) Check if LFS version is supported
 # 3) Check if LFS hooks are properly installed
 # 4) Check if files committed are larger than X, and not tracked via LFS
 # 5) Check if .gitattributes has been edited
@@ -105,68 +156,101 @@ state_lfs_gitattributes_edited=false
 state_lfs_uppercase_fileexts_detected=false
 state_errors=0
 
+
+echo -e "${BLD}------------------------------------------------------${N}"
+echo -e "${BLD}              Hack and Paint [pre-commit]${N}"
+echo -e "${BLD}------------------------------------------------------${N}"
+echo -e ""
+
 # Check if this is the initial commit
 if git rev-parse --verify HEAD >/dev/null 2>&1
 then
-    echo -e "Hack and Paint [pre-commit]:"
-    echo -e " 0. About to create a new commit..."
+    # echo -e " About to create a new commit..."
     against=HEAD
 else
-    echo -e " 0. Hack and Paint [pre-commit]: About to create the first commit..."
+    # echo -e " Hack and Paint [pre-commit]: About to create the first commit..."
     against=4b825dc642cb6eb9a060e54bf8d69288fbee4904
 fi
 
 
-# 1) Check if Git version is "correct"/expected
-echo -e " 1. Verify Software..."
+# 1) Check if Git version is supported
+echo -e "${BLD}Verify Git${N}"
 git_compare_string="$required_git_version $(vercomp_char $compare_git_version) $user_git_version"
 if [ "$state_git_version_ok" == 1 ] ;
 then
-    echo -e "   $icon_mugs GIT is valid: $git_compare_string"
+    echo -e "   $icon_positive GIT is valid: $git_compare_string"
 else
     echo -e "   $icon_negative GIT is not valid: $git_compare_string"
     # exit 1
 fi
 
 
-# 2) 
+# 2) Check if LFS is being used and version is supported
 # If .gitattributes exists, collect all tracked extensions
-echo " 2. Testing files for proper LFS tracking..."
+# TODO: Switch logic to use `git lfs track`
+echo -e "${BLD}Verify Git-LFS${N}"
 if [ -r ./.gitattributes ]
 then
-    # 2a) Check if LFS version is "correct"/expected
     lfs_compare_string="$required_lfs_version $(vercomp_char $compare_lfs_version) $user_lfs_version"
     if [ "$state_lfs_version_ok" == 1 ] ;
     then
         echo -e "   $icon_positive LFS is valid: $lfs_compare_string" 
     else
         echo -e "   $icon_negative LFS is not valid: $lfs_compare_string"
-        # exit 1
+        exit 1
     fi
 
-    # 2b) Collect LFS Tracking Extensions
+    # 2a) Collect LFS Tracking Extensions
     #  NOTICE: This will probably break, if we start tracking directories, etc
     #  NOTICE: This also assumes there is only a .gitattributes in the root directory
+    echo -e "${BLD}Collect LFS Tracking Extensions${N}"
     state_repo_uses_LFS=true
     lfsTrackedExtsCount=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | wc -l| awk '{print $1}')
     lfsTrackedExtsArr=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort)
-	lfsTrackedExts=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort | paste -sd "," -)
+    lfsTrackedExts=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort | paste -sd "," -)
     echo -e "   $icon_positive .gitattributes found"
-    echo "   - Tracking $lfsTrackedExtsCount extensions"
+    echo "   - $lfsTrackedExtsCount tracked extensions found"
+    # # Echo each extension
     # for i in $lfsTrackedExtsArr
     # do
     #    echo "      - $i"
     # done
+
+    # 3) Check if LFS hooks are properly installed
+    # ...
 else
-	echo -e "   $icon_warning .gitattributes missing" 
+    echo -e "   $icon_warning .gitattributes missing" 
     state_repo_uses_LFS=false
-	lfsTrackedExts=""
+    lfsTrackedExts=""
 fi
 
+# 4) Check if files committed are larger than X, and not tracked via LFS
+echo -e "${BLD}Check if files committed are larger than X, and not tracked via LFS${N}"
+git_status=$(git status --porcelain)
+git_status_lines=$(git status --porcelain | wc -l)
+git_status_status=$(git status --porcelain | awk '{print $1}')
+git_status_files=$(git status --porcelain | awk '{print $2}')
 
 
-echo $(git status --porcelain)
-echo $(git lfs status --porcelain)
+# for x in $(seq 0 2 $git_status_lines)
+# do
+#    a=$x
+#    b=$(($x+1))
+#    echo $(echo ${git_status} | cut -f 2- -d :| awk '{print $1}')
+#    echo $(echo ${git_status} | cut -f 2- -d :| awk '{print $2}')
+#    echo "      - $a $b"
+# done
+
+list_new_or_modified_files | check_file_size
+echo $?
+
+# echo $git_status_status
+# echo $git_status_files
+# for i in $git_status
+# do
+#    echo "      - $i"
+# done
+
 
 exit 1
 
