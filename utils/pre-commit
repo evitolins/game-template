@@ -1,5 +1,28 @@
 #!/usr/bin/env bash
 
+
+# Pre-Hook Checklist:
+# 
+# 0. Check if Bash version is supported
+# 1. Check if Git version is supported
+# 2. Check if LFS version is supported
+#   2a. Collect LFS Tracking Extensions
+#   2b. Check if LFS hooks are properly installed
+# 4. Block files larger than X from being committed without using LFS
+# 5. Check if .gitattributes has been edited
+#     - if so, make sure the newly tracked files/exts had never been commmitted before
+#     - warn user that these changes probably require a REPO rebuild to avoid future errors
+# 6. Check if files contain an uppercase extension
+#     - if so, stop the commit and suggest renaming the files before committing
+
+
+# Helpful snippets:
+#    git status --porcelain
+#    git lfs status --porcelain
+
+
+
+
 # STORE THESE UTILITIES EXTERNALLY
 # http://stackoverflow.com/questions/4023830/how-compare-two-strings-in-dot-separated-version-format-in-bash
 # 0 : =
@@ -51,12 +74,6 @@ vercomp_char () {
 
 
 # http://stackoverflow.com/questions/39576257/how-to-limit-file-size-on-commit
-MB=1048576
-hard_limit=$(($MB*2))
-soft_limit=$(($MB*1))
-hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
-soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
-
 list_new_or_modified_files()
 {
     git diff --staged --name-status|sed -e '/^D/ d; /^D/! s/.\s\+//'| awk '{print $2}'
@@ -99,8 +116,12 @@ check_file_size()
 
 
 
-
-
+# File Size Limits
+MB=1048576
+hard_limit=$(($MB*2))
+soft_limit=$(($MB*1))
+hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
+soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
 
 
 # Colors
@@ -121,25 +142,7 @@ icon_beer="${Y}\xF0\x9F\x8D\xBA EXTRA CREDIT:${N}"
 icon_mugs="${Y}\xF0\x9F\x8D\xBB CHEERS!:${N}"
 
 
-# Checklist:
-# 
-# 0) Check if Bash version is supported
-# 1) Check if Git version is supported
-# 2) Check if LFS version is supported
-# 3) Check if LFS hooks are properly installed
-# 4) Block files larger than X from being committed without using LFS
-# 5) Check if .gitattributes has been edited
-#     - if so, make sure the newly tracked files/exts had never been commmitted before
-#     - warn user that these changes probably require a REPO rebuild to avoid future errors
-# 6) Check if files contain an uppercase extension
-#     - if so, stop the commit and suggest renaming the files before committing
-
-
-# Helpful snippets:
-#    git status --porcelain
-#    git lfs status --porcelain
-
-
+# Gather Needed Data
 required_git_version="2.10.2"
 required_lfs_version="1.5.5"
 
@@ -159,10 +162,20 @@ state_lfs_uppercase_fileexts_detected=false
 state_errors=0
 
 
+commit_failure ()
+{
+    echo ""
+    echo -e "${R}Your commit has failed. ${BLD}Please review the messages above for suggestions to fix the issues.${N}"
+    echo ""
+    exit 1
+}
+
+
+
+
 echo -e "${BLD}------------------------------------------------------${N}"
 echo -e "${BLD}              Hack and Paint [pre-commit]${N}"
 echo -e "${BLD}------------------------------------------------------${N}"
-echo -e ""
 
 # Check if this is the initial commit
 if git rev-parse --verify HEAD >/dev/null 2>&1
@@ -175,22 +188,26 @@ else
 fi
 
 
+
+#######################################
 # 1) Check if Git version is supported
-echo -e "${BLD}Verify Git${N}"
+echo -e "${BLD}1. Verify Git${N}"
 git_compare_string="$required_git_version $(vercomp_char $compare_git_version) $user_git_version"
 if [ "$state_git_version_ok" == 1 ] ;
 then
     echo -e "   $icon_positive GIT is valid: $git_compare_string"
 else
     echo -e "   $icon_negative GIT is not valid: $git_compare_string"
-    # exit 1
+    commit_failure
 fi
 
 
+
+#######################################
 # 2) Check if LFS is being used and version is supported
 # If .gitattributes exists, collect all tracked extensions
 # TODO: Switch logic to use `git lfs track`
-echo -e "${BLD}Verify Git-LFS${N}"
+echo -e "${BLD}2. Verify Git-LFS${N}"
 if [ -r ./.gitattributes ]
 then
     lfs_compare_string="$required_lfs_version $(vercomp_char $compare_lfs_version) $user_lfs_version"
@@ -199,26 +216,28 @@ then
         echo -e "   $icon_positive LFS is valid: $lfs_compare_string" 
     else
         echo -e "   $icon_negative LFS is not valid: $lfs_compare_string"
-        exit 1
+        commit_failure
     fi
 
+    #######################################
     # 2a) Collect LFS Tracking Extensions
     #  NOTICE: This will probably break, if we start tracking directories, etc
     #  NOTICE: This also assumes there is only a .gitattributes in the root directory
-    echo -e "${BLD}Collect LFS Tracking Extensions${N}"
+    echo -e "${BLD}2a. Collect LFS Tracking Extensions${N}"
     state_repo_uses_LFS=true
     lfsTrackedExtsCount=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | wc -l| awk '{print $1}')
     lfsTrackedExtsArr=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort)
     lfsTrackedExts=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort | paste -sd "," -)
     echo -e "   $icon_positive .gitattributes found"
-    echo -e "   $icon_info $lfsTrackedExtsCount tracked extensions found"
+    echo -e "      $icon_info $lfsTrackedExtsCount tracked extensions found"
     # # Echo each extension
     # for i in $lfsTrackedExtsArr
     # do
     #    echo "      - $i"
     # done
 
-    # 3) Check if LFS hooks are properly installed
+    #######################################
+    # 2b) Check if LFS hooks are properly installed
     # ...
 else
     echo -e "   $icon_warning .gitattributes missing" 
@@ -226,27 +245,48 @@ else
     lfsTrackedExts=""
 fi
 
-# 4) Block files larger than X from being committed without using LFS
-echo -e "${BLD}Block files larger than ${hard_limit_human} from being committed without using LFS${N}"
+
+
+#######################################
+# 3) Block files larger than X from being committed without using LFS
+echo -e "${BLD}3. Block files larger than ${hard_limit_human} from being committed without using LFS${N}"
 list_new_or_modified_files | check_file_size
 files_too_large=$?
 
-echo $n
-
 if [ $files_too_large -gt 0 ]; then
-    echo -e "$icon_negative We need to talk about your TPS reports."
+    commit_failure
 fi
 
-# echo "--------------"
+
+
+#######################################
+# 4) Check if .gitattributes has been edited
+#     - if so, make sure the newly tracked files/exts had never been commmitted before
+#     - warn user that these changes probably require a REPO rebuild to avoid future errors
+echo -e "${BLD}4. Check if .gitattributes has been edited${N}"
+
+
+
+#######################################
+# 5) Check if files contain an uppercase extension
+#     - if so, stop the commit and suggest renaming the files before committing
+echo -e "${BLD}5. Check if files contain an uppercase extension${N}"
+while read status_feed
+do
+    f=$(echo $status_feed | awk '{print $2}')
+    filename=$(basename "$f")
+    ext="${filename##*.}"
+    filename="${filename%.*}"
+    path_no_extension="${f%.*}"
+    ext_lowercase=$(echo "$ext" | awk '{print tolower($0)}')
+    if [[ $ext =~ [A-Z] ]] ;
+    then
+        echo -e "   $icon_negative $f can not have an uppercase file extension." 
+        echo -e "      $icon_info please rename using \`git mv $f ${path_no_extension}.${ext_lowercase}\`" 
+        commit_failure
+    fi
+done < <(git lfs status --porcelain)
+
+
+# BLOCK COMMIT SUCCESS FOR TESTING
 exit 1
-
-# Use git diff-index to check for whitespace errors
-echo "3) Hack and Paint [pre-commit]: Testing for whitespace errors..."
-if ! git diff-index --check --cached $against
-then
-    echo -e "$icon_negative Hack and Paint [pre-commit]: Aborting commit due to whitespace errors"
-    exit 1
-else
-    echo -e "$icon_positive Hack and Paint [pre-commit]: No whitespace errors :)"
-    exit 0
-fi
