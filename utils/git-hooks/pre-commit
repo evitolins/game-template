@@ -21,6 +21,8 @@
 #    git status --porcelain
 #    git lfs status --porcelain
 
+# Reference:
+#    http://stackoverflow.com/questions/3878624/how-do-i-programmatically-determine-if-there-are-uncommited-changes
 
 
 
@@ -80,6 +82,7 @@ list_new_or_modified_files()
     git diff --staged --name-status|sed -e '/^D/ d; /^D/! s/.\s\+//'| awk '{print $2}'
 }
 
+# Remove leading and trailing double quotes
 unmunge()
 {
     local result="${1#\"}"
@@ -87,6 +90,7 @@ unmunge()
     echo "$result"
 }
 
+# Check filesize for all staged files
 check_file_size()
 {
     n=0
