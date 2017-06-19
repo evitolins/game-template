@@ -13,9 +13,18 @@ Basic Usage
 Store all documenation for the game within `/docs/`.  This includes meeting notes, schedules, planning and game design files.
 
 
-### b) Assets
+### b) Artwork
+
+Concept art is stored and shared within `/artwork/`.  Any _official artwork_ will be linked or copied to the appropriate asset's folder _see Assets below_.
+
+Contents here are organized as the artists want.  Predictable structure will be maintained in the assets area.
+
+
+### c) Assets
 
 Store working files and output for official game assets within `/assets/`. Depending on the project, certain asset types and workflows will be needed.
+
+> This is not to be confused with "Unity Assets" which are stored within the `/Unity/...` area
 
 Below are a few common __asset types__ and corresponding __file structures__ to consider:
 
@@ -59,7 +68,7 @@ Below are a few common __asset types__ and corresponding __file structures__ to 
 
 
 
-### c) Game
+### d) Game
 
 Store final game engine code and copied exports from asset output (or referenced, if possible).
 
@@ -67,7 +76,7 @@ Store final game engine code and copied exports from asset output (or referenced
 
 
 
-### d) Personal Experimentation
+### e) Personal Experimentation
 
 When working on new ideas or code which you would like to maintain history and/or share your files with others on the team, it is ideal to work under a _custom git branch_ . This way users are not forced into pulling unneeded files/assets that are not yet offically part of the required asset pool. _(see "Advanced Usage > Branching" below)_
 
