@@ -13,7 +13,7 @@ Basic Usage
 Store all documenation for the game within `/docs/`.  This includes meeting notes, schedules, planning and game design files.
 
 
-### b) Assets
+### b) Asset Development
 
 Store working files and output for official game assets within `/assets/`. Depending on the project, certain asset types and workflows will be needed.
 
@@ -22,19 +22,23 @@ Below are a few common __asset types__ and corresponding __file structures__ to 
 - **Character** (deforming rig)
 
         /assets/char/Minion_A/
-        /assets/char/Minion_A/Reference/
-        /assets/char/Minion_A/Concept/
+        /assets/char/Minion_A/Animation/
+        /assets/char/Minion_A/Artwork/
+        /assets/char/Minion_A/Exports/
         /assets/char/Minion_A/Geometry/
         /assets/char/Minion_A/Texture/
+        /assets/char/Minion_A/Reference/
         /assets/char/Minion_A/Rig/
+
 
 - **Prop** (non-deforming rig)
 
         /assets/prop/Sword_Worldslayer/
-        /assets/prop/Sword_Worldslayer/Reference/
-        /assets/prop/Sword_Worldslayer/Concept/
+        /assets/prop/Sword_Worldslayer/Animation/
+        /assets/prop/Sword_Worldslayer/Artwork/
         /assets/prop/Sword_Worldslayer/Geometry/
         /assets/prop/Sword_Worldslayer/Texture/
+        /assets/prop/Sword_Worldslayer/Reference/
         /assets/prop/Sword_Worldslayer/Rig/
 
 
@@ -47,19 +51,17 @@ Below are a few common __asset types__ and corresponding __file structures__ to 
         /assets/env/Battle_Arena_A/Texture/
         /assets/env/Battle_Arena_A/Lighting/
 
+#### Asset Versions and Exports
+All exported assets should be generated using completely committed files and
+code and be sure to provide a clear relationship to their their committed state
+within the repository.
 
-- **Animation** (motion files for characters)
-
-        /assets/anim/Minion_A_Runcycle_A/
-        /assets/anim/Minion_A_Runcycle_A/Reference/
-        /assets/anim/Minion_A_Runcycle_A/Scene/
-        /assets/anim/Minion_A_Runcycle_A/Playblasts/
-        /assets/anim/Minion_A_Runcycle_A/Export/
-
+These exported assets can then be linked to from the Unity folder for game
+development usage.
 
 
 
-### c) Game
+### c) Game Development
 
 Store final game engine code and copied exports from asset output (or referenced, if possible).
 
