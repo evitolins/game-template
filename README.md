@@ -15,9 +15,14 @@ Store all documenation for the game within `/docs/`.  This includes meeting note
 
 ### b) Asset Development
 
-Store working files and output for official game assets within `/assets/`. Depending on the project, certain asset types and workflows will be needed.
+Store working files and output for official game assets within `/assets/`.
+Depending on the project, certain asset types and workflows will be needed.
 
-Below are a few common __asset types__ and corresponding __file structures__ to consider:
+This area is for source files such as _Maya, Photoshop, Modo, Zbrush, etc..._
+which are responsible for generating final assets for the game.
+
+Below are a few common __asset types__ and corresponding __file structures__ to
+consider:
 
 - **Character** (deforming rig)
 
