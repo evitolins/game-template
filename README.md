@@ -22,28 +22,36 @@ Contents here are organized as the artists want.  Predictable structure will be 
 
 ### c) Assets
 
-Store working files and output for official game assets within `/assets/`. Depending on the project, certain asset types and workflows will be needed.
+Store working files and output for official game assets within `/assets/`.
+Depending on the project, certain asset types and workflows will be needed.
 
-> This is not to be confused with "Unity Assets" which are stored within the `/Unity/...` area
+This area is for source files such as _Maya, Photoshop, Modo, Zbrush, etc..._
+which are responsible for generating final assets for the game.
+
+> This is not to be confused with "Unity Assets" which are stored within the `/unity/...` area
 
 Below are a few common __asset types__ and corresponding __file structures__ to consider:
 
 - **Character** (deforming rig)
 
         /assets/char/Minion_A/
-        /assets/char/Minion_A/Reference/
-        /assets/char/Minion_A/Concept/
+        /assets/char/Minion_A/Animation/
+        /assets/char/Minion_A/Artwork/
+        /assets/char/Minion_A/Exports/
         /assets/char/Minion_A/Geometry/
         /assets/char/Minion_A/Texture/
+        /assets/char/Minion_A/Reference/
         /assets/char/Minion_A/Rig/
+
 
 - **Prop** (non-deforming rig)
 
         /assets/prop/Sword_Worldslayer/
-        /assets/prop/Sword_Worldslayer/Reference/
-        /assets/prop/Sword_Worldslayer/Concept/
+        /assets/prop/Sword_Worldslayer/Animation/
+        /assets/prop/Sword_Worldslayer/Artwork/
         /assets/prop/Sword_Worldslayer/Geometry/
         /assets/prop/Sword_Worldslayer/Texture/
+        /assets/prop/Sword_Worldslayer/Reference/
         /assets/prop/Sword_Worldslayer/Rig/
 
 
@@ -57,18 +65,17 @@ Below are a few common __asset types__ and corresponding __file structures__ to 
         /assets/env/Battle_Arena_A/Lighting/
 
 
-- **Animation** (motion files for characters)
+#### Asset Versions and Exports
+All exported assets should be generated using completely committed files and
+code and be sure to provide a clear relationship to their their committed state
+within the repository.
 
-        /assets/anim/Minion_A_Runcycle_A/
-        /assets/anim/Minion_A_Runcycle_A/Reference/
-        /assets/anim/Minion_A_Runcycle_A/Scene/
-        /assets/anim/Minion_A_Runcycle_A/Playblasts/
-        /assets/anim/Minion_A_Runcycle_A/Export/
-
-
+These exported assets can then be linked to from the Unity folder for game
+development usage.
 
 
-### d) Game
+
+### d) Game Development
 
 Store final game engine code and copied exports from asset output (or referenced, if possible).
 
@@ -115,6 +122,8 @@ During game development, it will be a common need to store and share large files
 ### Ignoring Files
 
 There are many files that are often created automatically which do not need to be tracked within Git.  Each user might have different needs based on their OS, or workflow… but a single “.gitignore” policy will help keep the repo tidy and free of junk.
+
+The template includes a full commonly ignored files within specific directories.
 
 #### Examples:
 - __Unity:__ https://github.com/github/gitignore/blob/master/Unity.gitignore
