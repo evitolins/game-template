@@ -1,13 +1,36 @@
 #!/usr/bin/env bash
 
+# 
+# install-merge-tools
+# 
+# Summary:
+# 
+#     This script helps a user install Unity's "UnityYAMLMerge" tool for use in
+#     a local git repo's merging actions.
+#     
+#     This script also installs the merge tool for SourceTree
+# 
+# 
+# References:
+# 
+#     - https://docs.unity3d.com/Manual/SmartMerge.html
+#     - http://kihira.uk/unity-and-git-getting-them-to-play-nicely/
+#     - https://gist.github.com/Ikalou/197c414d62f45a1193fd
+#     
+
+# -------------------------------------------------
+# Utilities
+# -------------------------------------------------
+
 # Colors
 # http://misc.flogisoft.com/bash/tip_colors_and_formatting
 G="\033[1;32m" # Green
-GY="\033[1;93m" # Gray
+GY="\033[1;37m" # Gray
 Y="\033[1;93m" # Yellow 
 R="\033[1;31m" # Red
 BLD="\033[1;1m" #BOLD
 N="\033[0m" # ~reset~
+INV="\033[1;7m" # Inverse
 
 CODE="\033[1;93;100m" # Fill Dark Gray
 # Icons
@@ -51,8 +74,22 @@ else
     echo -e "${icon_negative} "${OSTYPE}" is not a recognized OS"
 fi
 
+# Backup File
+backup_file () {
+    filename=$1;
+    filetime=$(date +%Y%m%d_%H%M%S); 
+    cp ${filename} ${filename}_${filetime};
+    echo -e "${icon_positive} Backup created: ${filename} -> ${filename}_${filetime} ${N}"
+}
 
-# Find available UnityYAMLMerge tool paths
+
+
+
+# -------------------------------------------------
+# Actions
+# -------------------------------------------------
+
+# a) Find available UnityYAMLMerge tool paths
 COUNTER=0
 declare -a FOUND_PATHS
 echo ""
@@ -65,17 +102,19 @@ done< <(find $ROOT_SEARCH_PATHS -name "UnityYAMLMerge*" 2>/dev/null)
 echo ""
 
 
-# Ask user to choose path
+# b) Ask user to choose path
 echo -n -e "${BLD}Enter the number of the path you would like to use and press [ENTER]: ${N}"
 read tool_path_index
 CHOSEN_TOOL_PATH=${FOUND_PATHS[$tool_path_index]}
-echo " - You've chosen the path \"$CHOSEN_TOOL_PATH\""
+echo -e "${icon_positive} You've chosen the path \"$CHOSEN_TOOL_PATH\""
 
 
-# Install Path Settings
+# c) Install Path Settings
 if [[ -x ${FOUND_PATHS[$tool_path_index]} ]]
 then
-    echo -e " - Installing settings into your repo's local git config...${N}"
+    # Create a backup of the user's gitconfig file
+    backup_file ".git/config"
+
     git config --local merge.tool unityyamlmerge
     git config --local mergetool.unityyamlmerge.trustExitCode false
     git config --local mergetool.unityyamlmerge.keepTemporaries true
@@ -84,8 +123,14 @@ then
     git config --local mergetool.unityyamlmerge.cmd "\"${CHOSEN_TOOL_PATH}\" merge -p \"\$BASE\" \"\$REMOTE\" \"\$LOCAL\" \"\$MERGED\""
     git config --local mergetool.sourcetree.cmd "\"${CHOSEN_TOOL_PATH}\" merge -p \"\$BASE\" \"\$REMOTE\" \"\$LOCAL\" \"\$MERGED\""
     git config --local mergetool.sourcetree.trustexitcode true
-    echo -e "${icon_positive} Install Complete!"
+    echo -e "${icon_positive} .git/config Updated${N}"
     # git config --local -l | grep -e "^merge"
 else
-    echo -e "${icon_negative} Given path was not executable."
+    echo -e "${icon_negative} Given path was not executable. Git Config not updated properly."
+    exit;
 fi
+
+echo -e "${icon_mugs} Install Complete!"
+
+echo -e ""
+echo -e "${INV} Consider rerunning this script if you ever change your Unity version. ${N}"
