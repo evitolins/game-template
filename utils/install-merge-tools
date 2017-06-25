@@ -18,27 +18,16 @@
 #     - https://gist.github.com/Ikalou/197c414d62f45a1193fd
 #     
 
-# -------------------------------------------------
-# Utilities
-# -------------------------------------------------
-
-# Colors
-# http://misc.flogisoft.com/bash/tip_colors_and_formatting
-G="\033[1;32m" # Green
-GY="\033[1;37m" # Gray
-Y="\033[1;93m" # Yellow 
-R="\033[1;31m" # Red
-BLD="\033[1;1m" #BOLD
-N="\033[0m" # ~reset~
-INV="\033[1;7m" # Inverse
-
-CODE="\033[1;93;100m" # Fill Dark Gray
-# Icons
-icon_info="${BLD}\xE2\x84\xB9 INFO:${N}"
-icon_positive="${G}\xE2\x9C\x94 SUCCESS:${N}"
-icon_warning="${Y}\xE2\x9A\xA0 WARNING:${N}"
-icon_negative="${R}\xE2\x9C\x98 FAILED:${N}"
-icon_mugs="${Y}\xF0\x9F\x8D\xBB CHEERS!:${N}"
+# Import Dependencies
+#   - paths must be relative to the git repo's root path
+DIR=$(git rev-parse --show-toplevel)
+if [[ ! -d "$DIR" ]]
+then
+    echo "Error: Git repo was not found."
+    exit;
+else
+    source "$DIR/utils/bash_utils"
+fi
 
 
 
@@ -76,10 +65,15 @@ fi
 
 # Backup File
 backup_file () {
-    filename=$1;
-    filetime=$(date +%Y%m%d_%H%M%S); 
-    cp ${filename} ${filename}_${filetime};
-    echo -e "${icon_positive} Backup created: ${filename} -> ${filename}_${filetime} ${N}"
+    filename=$1
+    filetime=$(date +%Y%m%d_%H%M%S)
+
+    if cp ${filename} ${filename}_${filetime}
+    then
+        echo -e "${icon_positive} Backup created: ${filename} -> ${filename}_${filetime} ${N}"
+    else
+        echo -e "${icon_negative} Backup failed: ${filename}"
+    fi
 }
 
 
@@ -124,7 +118,6 @@ then
     git config --local mergetool.sourcetree.cmd "\"${CHOSEN_TOOL_PATH}\" merge -p \"\$BASE\" \"\$REMOTE\" \"\$LOCAL\" \"\$MERGED\""
     git config --local mergetool.sourcetree.trustexitcode true
     echo -e "${icon_positive} .git/config Updated${N}"
-    # git config --local -l | grep -e "^merge"
 else
     echo -e "${icon_negative} Given path was not executable. Git Config not updated properly."
     exit;
@@ -133,4 +126,5 @@ fi
 echo -e "${icon_mugs} Install Complete!"
 
 echo -e ""
-echo -e "${INV} Consider rerunning this script if you ever change your Unity version. ${N}"
+echo -e "${INV} Consider re-running this script if you ever change your Unity version. ${N}"
+echo -e ""
