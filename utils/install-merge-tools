@@ -87,12 +87,19 @@ backup_file () {
 COUNTER=0
 declare -a FOUND_PATHS
 echo ""
-while read found_path
+
+# Loop through each root path
+for root_path in $ROOT_SEARCH_PATHS
 do
-    FOUND_PATHS[$COUNTER]=${found_path}
-    echo "  ${COUNTER}) ${found_path}"
-    COUNTER=$((COUNTER + 1))
-done< <(find $ROOT_SEARCH_PATHS -name "UnityYAMLMerge*" 2>/dev/null)
+    # Loop through each found UnityYAMLMerge path
+    while read found_path
+    do
+        FOUND_PATHS[$COUNTER]=${found_path}
+        echo "  ${COUNTER}) ${found_path}"
+        COUNTER=$((COUNTER + 1))
+    done< <(find $root_path -name "UnityYAMLMerge*" 2>/dev/null)
+done
+
 echo ""
 
 
