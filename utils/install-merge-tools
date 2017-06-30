@@ -52,7 +52,7 @@ elif [[ "$OSTYPE" == "darwin"* ]]; then
 elif [[ "$OSTYPE" == "msys" ]]; then
     # Lightweight shell and GNU utilities compiled for Windows (part of MinGW) & Windows GitBash
     # Search for available drives on GitBash Windows
-    ROOT_SEARCH_PATHS=$(cat /proc/partitions | awk '{print $5}' | grep -e "[A-Z][:]" | tr ':\\' ' ' | sed -e "s/[[:space:]]\+/ /g" | awk '{print "/"$1""}' | tr '\n' ' ')
+    ROOT_SEARCH_PATHS=$(cat /proc/partitions | awk '{print $5}' | grep -e "[A-Z][:]" | tr ':\\' ' ' | sed -e "s/[[:space:]]\+/ /g" | awk '{print "/"$1":/"}' | tr '\n' ' ')
 else
     echo -e "${icon_negative} "${OSTYPE}" is not a recognized OS"
 fi
