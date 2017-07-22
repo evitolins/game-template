@@ -166,7 +166,7 @@ then
 
     #######################################
     # 2b) Check if LFS hooks are properly installed
-    # ...
+    git lfs install
 else
     echo -e "   $icon_warning .gitattributes missing" 
     state_repo_uses_LFS=false
