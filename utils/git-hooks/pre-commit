@@ -193,14 +193,23 @@ fi
 
 
 #######################################
-# 4) Check if .gitattributes has been edited
+# 4) Check if .gitattributes has been edited.
 #     - 4a. Require the .gitattributes changes be staged for commit
-#     - 4b. Check history for repo, and see if the extension has been previously committed, untracked sure the newly tracked files/exts had never been commmitted before
-#     - 4c. warn user that these changes probably require a REPO rebuild to avoid future errors
-
-# NOTE: Must check .gitattributes, even if it's not staged, as LFS will use
+#     - 4b. Check history for repo, and see if the extension has been
+#           previously committed, untracked sure the newly tracked files/exts
+#           had never been commmitted before
+#     - 4c. warn user that these changes probably require a REPO rebuild to
+#           avoid future errors
+#     
+# We must check .gitattributes, even if it's not staged, as LFS will use
 # .gitattributes as it exists in the working directory.
-#
+#    
+# If new extentions are tracked with LFS, we need to verify that the repository
+# does not have previous commits with files matching that extention (not
+# tracked in LFS).  This will require extra attention, as the repo will
+# continue to display errors, unless it's history is repared (ie. BFG, etc.)
+# 
+
 echo -e "${BLD}4. Check if .gitattributes has been edited${N}"
 while read status_feed
 do
