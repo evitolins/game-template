@@ -235,6 +235,7 @@ echo -e "${BLD}4a. Require the .gitattributes changes be staged for commit${N}"
 
 
 echo -e "${BLD}4b. Check repo history for previously committed/untracked files of the newly tracked extensions${N}"
+echo -e "   ${icon_warning} This feature is currently disabled.${N}"
 
 
 
