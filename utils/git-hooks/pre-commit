@@ -36,6 +36,23 @@
 #    http://stackoverflow.com/questions/3878624/how-do-i-programmatically-determine-if-there-are-uncommited-changes
 #
 
+# Success/Failure functions
+commit_failure ()
+{
+    echo ""
+    echo -e "${R}Your commit has failed. ${BLD}Please review the messages above for suggestions to fix the issues.${N}"
+    echo ""
+    exit 1
+}
+
+commit_success ()
+{
+    echo ""
+    echo -e "${icon_mugs} ${G}Your commit was successful! ${BLD}Carry on my wayward son...${N}"
+    echo ""
+}
+
+
 
 # Import Dependencies
 #   - paths must be relative to the git repo's root path
@@ -43,7 +60,7 @@ DIR=$(git rev-parse --show-toplevel)
 if [[ ! -d "$DIR" ]]
 then
     echo "Error: Git repo was not found."
-    exit;
+    commit_failure
 else
     source "$DIR/utils/bash_utils"
 fi
@@ -79,20 +96,7 @@ state_lfs_uppercase_fileexts_detected=false
 state_errors=0
 
 
-commit_failure ()
-{
-    echo ""
-    echo -e "${R}Your commit has failed. ${BLD}Please review the messages above for suggestions to fix the issues.${N}"
-    echo ""
-    exit 1
-}
 
-commit_success ()
-{
-    echo ""
-    echo -e "${icon_mugs} ${G}Your commit was successful! ${BLD}Carry on my wayward son...${N}"
-    echo ""
-}
 
 
 
