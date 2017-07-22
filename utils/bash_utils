@@ -1,0 +1,144 @@
+#!/usr/bin/env bash
+
+# 
+# bash_utils
+# 
+# Summary:
+# 
+#     Generic constants and utilities to be sourced by other scripts 
+# 
+# References:
+# 
+#     (Noted next to each utility)
+#     
+
+# --------------------------------------------
+# Constants
+# --------------------------------------------
+
+# Colors
+# http://misc.flogisoft.com/bash/tip_colors_and_formatting
+G="\033[1;32m" # Green
+GY="\033[1;37m" # Gray
+Y="\033[1;93m" # Yellow 
+R="\033[1;31m" # Red
+BLD="\033[1;1m" #BOLD
+N="\033[0m" # ~reset~
+
+INV="\033[1;7m" # Inverse
+CODE="\033[1;93;100m" # Fill Dark Gray
+
+# Icons
+icon_info="${BLD}\xE2\x84\xB9 INFO:${N}"
+icon_positive="${G}\xE2\x9C\x94 SUCCESS:${N}"
+icon_warning="${Y}\xE2\x9A\xA0 WARNING:${N}"
+icon_negative="${R}\xE2\x9C\x98 FAILED:${N}"
+icon_mugs="${Y}\xF0\x9F\x8D\xBB CHEERS!:${N}"
+
+
+# Data
+MB=1048576
+
+
+
+
+# --------------------------------------------
+# Functions
+# --------------------------------------------
+
+
+# http://stackoverflow.com/questions/4023830/how-compare-two-strings-in-dot-separated-version-format-in-bash
+# 0 : =
+# 1 : >
+# 2 : <
+vercomp () {
+    if [[ $1 == $2 ]]
+    then
+        echo 0
+        return 0
+    fi
+    local IFS=.
+    local i ver1=($1) ver2=($2)
+    # fill empty fields in ver1 with zeros
+    for ((i=${#ver1[@]}; i<${#ver2[@]}; i++))
+    do
+        ver1[i]=0
+    done
+    for ((i=0; i<${#ver1[@]}; i++))
+    do
+        if [[ -z ${ver2[i]} ]]
+        then
+            # fill empty fields in ver2 with zeros
+            ver2[i]=0
+        fi
+        if ((10#${ver1[i]} > 10#${ver2[i]}))
+        then
+            echo 1
+            return 1
+        fi
+        if ((10#${ver1[i]} < 10#${ver2[i]}))
+        then
+            echo 2
+            return 2
+        fi
+    done
+    echo 0
+    return 0
+}
+
+vercomp_char () {
+    case $1 in
+        0) op='=';;
+        1) op='>';;
+        2) op='<';;
+    esac
+    echo $op
+}
+
+
+# http://stackoverflow.com/questions/39576257/how-to-limit-file-size-on-commit
+list_new_or_modified_files()
+{
+    git diff --staged --name-status|sed -e '/^D/ d; /^D/! s/.\s\+//'| awk '{print $2}'
+}
+
+# Remove leading and trailing double quotes
+unmunge()
+{
+    local result="${1#\"}"
+    result="${result%\"}"
+    echo "$result"
+}
+
+# Check filesize for all staged files
+check_file_size()
+{
+    n=0
+    while read -r munged_filename
+    do
+        f=$(unmunge "$munged_filename")
+        h=$(git ls-files -s "$f"|cut -d' ' -f 2)
+        s=$(git cat-file -s "$h")
+        s_human=$(echo $s| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
+        filename=$(basename "$f")
+        ext="${filename##*.}"
+
+        if [ "$s" -gt $hard_limit ]
+        then
+            echo -e "   $icon_negative Exceeded hard size limit ($hard_limit_human): $munged_filename ($s_human)"
+            echo -e "      $icon_info You must track this extension. Run ${CODE} git lfs track \"*.${ext}\" ${N} before proceeding."
+            n=$((n+1))
+        elif [ "$s" -gt $soft_limit ]
+        then
+            echo -e "   $icon_warning Exceeded soft size limit ($soft_limit_human): $munged_filename ($s_human)"
+            echo -e "      $icon_info Please consider tracking this extension using ${CODE} git lfs track \"*.${ext}\" ${N}"
+        fi
+    done
+
+    return $n
+}
+
+# http://stackoverflow.com/questions/8063228/how-do-i-check-if-a-variable-exists-in-a-list-in-bash
+contains() {
+    [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]] && exit 0 || exit 1
+}

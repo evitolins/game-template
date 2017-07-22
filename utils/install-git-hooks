@@ -1,3 +1,15 @@
 #!/usr/bin/env bash
 
+# 
+# install-git-hooks
+# 
+# Summary:
+# 
+#     This script installs any needed git hooks, using symbolic links.
+#     
+#     Because of the link, any updated scripts will automatically be applied.
+#     However, if any new hooks have been added, this script must be updated
+#     and run again.
+#   
+
 ln -s ../../utils/git-hooks/pre-commit .git/hooks/pre-commit

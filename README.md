@@ -13,7 +13,14 @@ Basic Usage
 Store all documenation for the game within `/docs/`.  This includes meeting notes, schedules, planning and game design files.
 
 
-### b) Asset Development
+### b) Artwork
+
+Concept art is stored and shared within `/artwork/`.  Any _official artwork_ will be linked or copied to the appropriate asset's folder _see Assets below_.
+
+Contents here are organized as the artists want.  Predictable structure will be maintained in the assets area.
+
+
+### c) Assets
 
 Store working files and output for official game assets within `/assets/`.
 Depending on the project, certain asset types and workflows will be needed.
@@ -21,8 +28,9 @@ Depending on the project, certain asset types and workflows will be needed.
 This area is for source files such as _Maya, Photoshop, Modo, Zbrush, etc..._
 which are responsible for generating final assets for the game.
 
-Below are a few common __asset types__ and corresponding __file structures__ to
-consider:
+> This is not to be confused with "Unity Assets" which are stored within the `/unity/...` area
+
+Below are a few common __asset types__ and corresponding __file structures__ to consider:
 
 - **Character** (deforming rig)
 
@@ -56,6 +64,7 @@ consider:
         /assets/env/Battle_Arena_A/Texture/
         /assets/env/Battle_Arena_A/Lighting/
 
+
 #### Asset Versions and Exports
 All exported assets should be generated using completely committed files and
 code and be sure to provide a clear relationship to their their committed state
@@ -66,7 +75,7 @@ development usage.
 
 
 
-### c) Game Development
+### d) Game Development
 
 Store final game engine code and copied exports from asset output (or referenced, if possible).
 
@@ -74,7 +83,7 @@ Store final game engine code and copied exports from asset output (or referenced
 
 
 
-### d) Personal Experimentation
+### e) Personal Experimentation
 
 When working on new ideas or code which you would like to maintain history and/or share your files with others on the team, it is ideal to work under a _custom git branch_ . This way users are not forced into pulling unneeded files/assets that are not yet offically part of the required asset pool. _(see "Advanced Usage > Branching" below)_
 
@@ -113,6 +122,8 @@ During game development, it will be a common need to store and share large files
 ### Ignoring Files
 
 There are many files that are often created automatically which do not need to be tracked within Git.  Each user might have different needs based on their OS, or workflow… but a single “.gitignore” policy will help keep the repo tidy and free of junk.
+
+The template includes a full commonly ignored files within specific directories.
 
 #### Examples:
 - __Unity:__ https://github.com/github/gitignore/blob/master/Unity.gitignore
