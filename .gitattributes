@@ -5,12 +5,6 @@
 # Note: Try to keep groupings listed in alphabetical order.
 ###############################################################################
 
-# Unity Smart Merge
-# NOTE: binary is set purely to avoid automatic merging by git.  Files should
-#       be saved in text format if applicable.
-*.asset binary merge=unityyamlmerge
-*.prefab binary merge=unityyamlmerge
-*.unity binary merge=unityyamlmerge
 
 
 # Image
