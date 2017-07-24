@@ -142,3 +142,17 @@ check_file_size()
 contains() {
     [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]] && exit 0 || exit 1
 }
+
+
+# Backup File
+backup_file () {
+    filename=$1
+    filetime=$(date +%Y%m%d_%H%M%S)
+
+    if cp ${filename} ${filename}_${filetime}
+    then
+        echo -e "${icon_positive} Backup created: ${filename} -> ${filename}_${filetime} ${N}"
+    else
+        echo -e "${icon_negative} Backup failed: ${filename}"
+    fi
+}
