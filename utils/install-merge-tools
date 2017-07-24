@@ -19,7 +19,14 @@
 #     - https://www.youtube.com/watch?v=OLneiOqEoU8
 #     - http://www.gamasutra.com/blogs/TimPettersen/20161206/286981/The_complete_guide_to_Unity__Git.php
 #     - http://www.jameskeats.com/blogs/post/Unitys-SmartMerge-Meets-SourceTree/
-#     
+#
+#
+# Notes:
+# 
+# Locating a user's global git config file is not completely straight forward
+#     - local: `git config --local --list --show-origin | grep "config" | awk '{print $1}' | sort -u | sed -e "s/^file://"` (however we can pretty much assume `.git/config`)
+#     - global: `git config --global --list --show-origin | grep ".gitconfig" | awk '{print $1}' | sort -u | sed -e "s/^file://"`
+#
 
 # Import Dependencies
 #   - paths must be relative to the git repo's root path
@@ -112,6 +119,8 @@ then
     # git config --local mergetool.sourcetree.trustexitcode true
     echo -e "${icon_positive} .git/config Updated${N}"
     echo -e "${icon_warning} You must manually install the settings for SourceTree.  See \`utils/README.md\` for details.${N}"
+    echo -e "    - ${icon_info} ${CHOSEN_TOOL_PATH}${N}"
+    echo -e "    - ${icon_info} merge -p \"\$BASE\" \"\$REMOTE\" \"\$LOCAL\" \"\$MERGED\"${N}"
 else
     echo -e "${icon_negative} Given path was not executable. Git Config not updated properly."
     exit;
