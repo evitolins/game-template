@@ -67,18 +67,12 @@ fi
 
 
 # File Size Limits
-hard_limit=$(($MB*2))
-soft_limit=$(($MB*1))
-hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
-soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
-
-
-
-
+HARD_LIMIT=$(($MB*2))
+SOFT_LIMIT=$(($MB*1))
 
 # Gather Needed Data
-required_git_version="2.10.2"
-required_lfs_version="1.5.5"
+REQUIRED_GIT_VERSION="2.10.2"
+REQUIRED_LFS_VERSION="1.5.5"
 
 lfsTrackedExts=""
 
@@ -110,7 +104,7 @@ echo -e "${BLD}1. Verify Git${N}"
 # Check if git is installed
 # Gather Env Data
 user_git_version=$(git version | awk '{print $3}')
-compare_git_version=$(vercomp $user_git_version $required_git_version)
+compare_git_version=$(vercomp $user_git_version $REQUIRED_GIT_VERSION)
 state_git_version_ok=$( [ ! "$compare_git_version" -lt 2 ]; echo $? )
 
 if [ -z "$user_git_version" ];
@@ -120,7 +114,7 @@ then
 fi  
 
 # Check for required version
-git_compare_string="$user_git_version $(vercomp_char $compare_git_version) $required_git_version"
+git_compare_string="$user_git_version $(vercomp_char $compare_git_version) $REQUIRED_GIT_VERSION"
 if [ "$state_git_version_ok" == 1 ] ;
 then
     echo -e "   $icon_positive git is valid: $git_compare_string"
@@ -140,7 +134,7 @@ if [ -r ./.gitattributes ]
 then
     # Gather Env Data
     user_lfs_version=$(git lfs version | awk '{print $1}' | awk -F '/' '{print $2}')
-    compare_lfs_version=$(vercomp $user_lfs_version $required_lfs_version)
+    compare_lfs_version=$(vercomp $user_lfs_version $REQUIRED_LFS_VERSION)
     state_lfs_version_ok=$( [ ! "$compare_lfs_version" -lt 2 ]; echo $? )
 
     echo -e "   $icon_info .gitattributes is found. Repo requires git-lfs"
@@ -151,7 +145,7 @@ then
         commit_failure
     fi  
     # Check for required version
-    lfs_compare_string="$user_lfs_version $(vercomp_char $compare_lfs_version) $required_lfs_version"
+    lfs_compare_string="$user_lfs_version $(vercomp_char $compare_lfs_version) $REQUIRED_LFS_VERSION"
     if [ "$state_lfs_version_ok" == 1 ] ;
     then
         echo -e "   $icon_positive LFS is valid: $lfs_compare_string" 
@@ -194,9 +188,10 @@ fi
 #    Because the LFS-tracked file size returned is actually the size of the
 #    pointer file instead.  You can assume any file size listed over ~130b is
 #    not being tracked.
-#    
+#
+hard_limit_human=$(echo $HARD_LIMIT| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
 echo -e "${BLD}3. Block files larger than ${hard_limit_human} from being committed without using LFS${N}"
-list_new_or_modified_files | check_file_size
+list_new_or_modified_files | check_file_size ${HARD_LIMIT} ${SOFT_LIMIT}
 files_too_large=$?
 
 if [ $files_too_large -gt 0 ]; then
