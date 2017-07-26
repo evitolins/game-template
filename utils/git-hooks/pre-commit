@@ -120,7 +120,7 @@ fi
 #######################################
 # 1) Check if Git version is supported
 echo -e "${BLD}1. Verify Git${N}"
-git_compare_string="$required_git_version $(vercomp_char $compare_git_version) $user_git_version"
+git_compare_string="$user_git_version $(vercomp_char $compare_git_version) $required_git_version"
 if [ "$state_git_version_ok" == 1 ] ;
 then
     echo -e "   $icon_positive GIT is valid: $git_compare_string"
@@ -138,7 +138,7 @@ fi
 echo -e "${BLD}2. Verify Git-LFS${N}"
 if [ -r ./.gitattributes ]
 then
-    lfs_compare_string="$required_lfs_version $(vercomp_char $compare_lfs_version) $user_lfs_version"
+    lfs_compare_string="$user_lfs_version $(vercomp_char $compare_lfs_version) $required_lfs_version"
     if [ "$state_lfs_version_ok" == 1 ] ;
     then
         echo -e "   $icon_positive LFS is valid: $lfs_compare_string" 
