@@ -113,6 +113,10 @@ unmunge()
 # Check filesize for all staged files
 check_file_size()
 {
+    hard_limit=$1
+    hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
+    soft_limit=$2
+    soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
     n=0
     while read -r munged_filename
     do
