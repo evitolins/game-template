@@ -130,8 +130,12 @@ fi
 # If .gitattributes exists, collect all tracked extensions
 # TODO: Switch logic to use `git lfs track`
 echo -e "${BLD}2. Verify Git-LFS${N}"
-if [ -r ./.gitattributes ]
+if [ ! -r ./.gitattributes ]
 then
+    echo -e "   $icon_info .gitattributes missing. Skipping LFS requirements." 
+    state_repo_uses_LFS=false
+    lfsTrackedExts=""
+else    
     # Gather Env Data
     user_lfs_version=$(git lfs version | awk '{print $1}' | awk -F '/' '{print $2}')
     compare_lfs_version=$(vercomp $user_lfs_version $REQUIRED_LFS_VERSION)
@@ -174,10 +178,6 @@ then
     #######################################
     # 2b) Check if LFS hooks are properly installed
     git lfs install
-else
-    echo -e "   $icon_warning .gitattributes missing" 
-    state_repo_uses_LFS=false
-    lfsTrackedExts=""
 fi
 
 
