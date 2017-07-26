@@ -80,20 +80,7 @@ soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "
 required_git_version="2.10.2"
 required_lfs_version="1.5.5"
 
-user_git_version=$(git version | awk '{print $3}')
-user_lfs_version=$(git lfs version | awk '{print $1}' | awk -F '/' '{print $2}')
 lfsTrackedExts=""
-
-compare_git_version=$(vercomp $user_git_version $required_git_version)
-compare_lfs_version=$(vercomp $user_lfs_version $required_lfs_version)
-
-state_git_version_ok=$( [ ! "$compare_git_version" -lt 2 ]; echo $? )
-state_lfs_version_ok=$( [ ! "$compare_lfs_version" -lt 2 ]; echo $? )
-state_lfs_is_required=false
-state_lfs_hooks_are_installed=false
-state_lfs_gitattributes_edited=false
-state_lfs_uppercase_fileexts_detected=false
-state_errors=0
 
 
 
@@ -120,12 +107,25 @@ fi
 #######################################
 # 1) Check if Git version is supported
 echo -e "${BLD}1. Verify Git${N}"
+# Check if git is installed
+# Gather Env Data
+user_git_version=$(git version | awk '{print $3}')
+compare_git_version=$(vercomp $user_git_version $required_git_version)
+state_git_version_ok=$( [ ! "$compare_git_version" -lt 2 ]; echo $? )
+
+if [ -z "$user_git_version" ];
+then
+    echo -e "   $icon_negative git does not appear to be installed"
+    commit_failure
+fi  
+
+# Check for required version
 git_compare_string="$user_git_version $(vercomp_char $compare_git_version) $required_git_version"
 if [ "$state_git_version_ok" == 1 ] ;
 then
-    echo -e "   $icon_positive GIT is valid: $git_compare_string"
+    echo -e "   $icon_positive git is valid: $git_compare_string"
 else
-    echo -e "   $icon_negative GIT is not valid: $git_compare_string"
+    echo -e "   $icon_negative git is not valid: $git_compare_string"
     commit_failure
 fi
 
@@ -138,6 +138,19 @@ fi
 echo -e "${BLD}2. Verify Git-LFS${N}"
 if [ -r ./.gitattributes ]
 then
+    # Gather Env Data
+    user_lfs_version=$(git lfs version | awk '{print $1}' | awk -F '/' '{print $2}')
+    compare_lfs_version=$(vercomp $user_lfs_version $required_lfs_version)
+    state_lfs_version_ok=$( [ ! "$compare_lfs_version" -lt 2 ]; echo $? )
+
+    echo -e "   $icon_info .gitattributes is found. Repo requires git-lfs"
+    # Check if git-lfs is installed
+    if [ -z "$user_lfs_version" ];
+    then
+        echo -e "   $icon_negative git-lfs does not appear to be installed"
+        commit_failure
+    fi  
+    # Check for required version
     lfs_compare_string="$user_lfs_version $(vercomp_char $compare_lfs_version) $required_lfs_version"
     if [ "$state_lfs_version_ok" == 1 ] ;
     then
