@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 
 # 
-# bash_utils
+# git pre-commit hook
 # 
 # Summary:
 # 
-#     Generic constants and utilities to be sourced by other scripts 
+#     This script insures that files committed within your git/git-lfs repo are
+#     properly handled.  This should block any activity which could 
+#     accidentally commit large files directly within a git repo, and avoids
+#     certain known issues with lfs behavior.
 #
 #
 # Pre-Hook Checklist:
