@@ -48,7 +48,7 @@ commit_failure ()
 commit_success ()
 {
     echo ""
-    echo -e "${icon_mugs} ${G}Your commit was successful! ${BLD}Carry on my wayward son...${N}"
+    echo -e "${ICON_MUGS} ${G}Your commit was successful! ${BLD}Carry on my wayward son...${N}"
     echo ""
 }
 
@@ -83,7 +83,7 @@ lfsTrackedExts=""
 
 
 echo -e "${BLD}------------------------------------------------------${N}"
-echo -e "${BLD}              Hack and Paint [pre-commit]${N}"
+echo -e "${BLD}              Hack and Paint [pre-commit]             ${N}"
 echo -e "${BLD}------------------------------------------------------${N}"
 
 # Check if this is the initial commit
@@ -109,7 +109,7 @@ state_git_version_ok=$( [ ! "$compare_git_version" -lt 2 ]; echo $? )
 
 if [ -z "$user_git_version" ];
 then
-    echo -e "   $icon_negative git does not appear to be installed"
+    echo -e "   $ICON_NEGATIVE git does not appear to be installed"
     commit_failure
 fi  
 
@@ -117,9 +117,9 @@ fi
 git_compare_string="$user_git_version $(vercomp_char $compare_git_version) $REQUIRED_GIT_VERSION"
 if [ "$state_git_version_ok" == 1 ] ;
 then
-    echo -e "   $icon_positive git is valid: $git_compare_string"
+    echo -e "   $ICON_POSITIVE git is valid: $git_compare_string"
 else
-    echo -e "   $icon_negative git is not valid: $git_compare_string"
+    echo -e "   $ICON_NEGATIVE git is not valid: $git_compare_string"
     commit_failure
 fi
 
@@ -132,7 +132,7 @@ fi
 echo -e "${BLD}2. Verify Git-LFS${N}"
 if [ ! -r ./.gitattributes ]
 then
-    echo -e "   $icon_info .gitattributes missing. Skipping LFS requirements." 
+    echo -e "   $ICON_INFO .gitattributes missing. Skipping git-lfs requirements." 
     state_repo_uses_LFS=false
     lfsTrackedExts=""
 else    
@@ -141,20 +141,20 @@ else
     compare_lfs_version=$(vercomp $user_lfs_version $REQUIRED_LFS_VERSION)
     state_lfs_version_ok=$( [ ! "$compare_lfs_version" -lt 2 ]; echo $? )
 
-    echo -e "   $icon_info .gitattributes is found. Repo requires git-lfs"
+    echo -e "   $ICON_INFO .gitattributes is found. Repo requires git-lfs"
     # Check if git-lfs is installed
     if [ -z "$user_lfs_version" ];
     then
-        echo -e "   $icon_negative git-lfs does not appear to be installed"
+        echo -e "   $ICON_NEGATIVE git-lfs does not appear to be installed"
         commit_failure
     fi  
     # Check for required version
     lfs_compare_string="$user_lfs_version $(vercomp_char $compare_lfs_version) $REQUIRED_LFS_VERSION"
     if [ "$state_lfs_version_ok" == 1 ] ;
     then
-        echo -e "   $icon_positive LFS is valid: $lfs_compare_string" 
+        echo -e "   $ICON_POSITIVE git-lfs is valid: $lfs_compare_string" 
     else
-        echo -e "   $icon_negative LFS is not valid: $lfs_compare_string"
+        echo -e "   $ICON_NEGATIVE git-lfs is not valid: $lfs_compare_string"
         commit_failure
     fi
 
@@ -167,8 +167,8 @@ else
     lfsTrackedExtsCount=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | wc -l| awk '{print $1}')
     lfsTrackedExtsArr=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort)
     lfsTrackedExts=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort | paste -sd "," -)
-    echo -e "   $icon_positive .gitattributes found"
-    echo -e "      $icon_info $lfsTrackedExtsCount tracked extensions found"
+    echo -e "   $ICON_POSITIVE .gitattributes found"
+    echo -e "      $ICON_INFO $lfsTrackedExtsCount tracked extensions found"
     # # Echo each extension
     # for i in $lfsTrackedExtsArr
     # do
@@ -226,8 +226,8 @@ do
     path_no_extension="${f%.*}"
     if [[ $filename = ".gitattributes" ]] ;
     then
-        echo -e "   $icon_warning $f has been edited"
-        echo -e "      $icon_info $f this file must be staged."
+        echo -e "   $ICON_WARNING $f has been edited"
+        echo -e "      $ICON_INFO $f this file must be staged."
     fi
 done < <(git status --porcelain)
 
@@ -243,7 +243,7 @@ echo -e "${BLD}4a. Require the .gitattributes changes be staged for commit${N}"
 
 
 echo -e "${BLD}4b. Check repo history for previously committed/untracked files of the newly tracked extensions${N}"
-echo -e "   ${icon_warning} This feature is currently disabled.${N}"
+echo -e "   ${ICON_WARNING} This feature is currently disabled.${N}"
 
 
 
@@ -261,8 +261,8 @@ do
     ext_lowercase=$(echo "$ext" | awk '{print tolower($0)}')
     if [[ $ext =~ [A-Z] ]] ;
     then
-        echo -e "   $icon_negative $f can not have an uppercase file extension." 
-        echo -e "      $icon_info please rename using ${CODE} git mv $f ${path_no_extension}.${ext_lowercase} ${N}" 
+        echo -e "   $ICON_NEGATIVE $f can not have an uppercase file extension." 
+        echo -e "      $ICON_INFO please rename using ${CODE} git mv $f ${path_no_extension}.${ext_lowercase} ${N}" 
         commit_failure
     fi
 done < <(git lfs status --porcelain)
