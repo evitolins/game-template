@@ -123,6 +123,15 @@ list_new_or_modified_files()
     git diff --staged --name-status|sed -e '/^D/ d; /^D/! s/.\s\+//'| awk '{print $2}'
 }
 
+
+# Lists untracked files, which are shouldn't be ignored
+# https://stackoverflow.com/questions/17358953/how-to-make-a-list-of-all-the-cached-files-and-untracked-files-in-a-git-reposito
+list_untracked_files()
+{
+    git ls-files --others --exclude-standard
+}
+
+
 # Remove leading and trailing double quotes
 unmunge()
 {
@@ -164,6 +173,22 @@ check_file_size()
 
     return $n
 }
+
+# string_contains(string, substring)
+#
+# Returns 0 if the specified string contains the specified substring,
+# otherwise returns 1.
+string_contains() {
+    string="$1"
+    substring="$2"
+    if test "${string#*$substring}" != "$string"
+    then
+        return 0    # $substring is in $string
+    else
+        return 1    # $substring is not in $string
+    fi
+}
+
 
 # http://stackoverflow.com/questions/8063228/how-do-i-check-if-a-variable-exists-in-a-list-in-bash
 contains() {
