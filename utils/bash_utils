@@ -118,9 +118,10 @@ vercomp_char () {
 
 
 # http://stackoverflow.com/questions/39576257/how-to-limit-file-size-on-commit
+# https://stackoverflow.com/questions/6879501/filter-git-diff-by-type-of-change
 list_new_or_modified_files()
 {
-    git diff --staged --name-status|sed -e '/^D/ d; /^D/! s/.\s\+//'| awk '{print $2}'
+    git diff --cached --name-only --diff-filter=AM
 }
 
 
@@ -192,7 +193,7 @@ string_contains() {
 
 # http://stackoverflow.com/questions/8063228/how-do-i-check-if-a-variable-exists-in-a-list-in-bash
 contains() {
-    [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]] && exit 0 || exit 1
+    [[ "$1" =~ (^|[[:space:]])"$2"($|[[:space:]]) ]] && return 0 || return 1
 }
 
 
