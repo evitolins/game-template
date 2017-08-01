@@ -16,18 +16,17 @@
 #     0. Check if Bash version is supported
 #     1. Check if Git version is supported
 #     2. Check if LFS version is supported
-#        - 2a. Verify .gitattributes is being tracked
+#        - 2a. Require .gitattributes is being tracked, and changes committed
 #        - 2b. Collect LFS Tracking Extensions
 #        - 2c. Check if LFS hooks are properly installed
+#        - 2d. Check repo history for previously committed/untracked files of
+#              the newly tracked extensions
+#          - Warn user that these changes probably require a REPO rebuild to
+#            avoid future errors
 #     3. Block files larger than X from being committed without using LFS
-#     4. Check if .gitattributes has been edited
-#         - 4a. Require the .gitattributes changes be staged for commit
-#         - 4b. Check repo history for previously committed/untracked files of
-#               the newly tracked extensions
-#           - Warn user that these changes probably require a REPO rebuild to
-#             avoid future errors
-#     5. Check if files contain an uppercase extension
-#         - 5a. if so, stop the commit and suggest renaming the files before
+#        tracking
+#     4. Check if files contain an uppercase extension
+#         - 4a. if so, stop the commit and suggest renaming the files before
 #               committing
 #
 #
@@ -132,6 +131,14 @@ fi
 #######################################
 # 2) Check if LFS is being used and version is supported
 # If .gitattributes exists, collect all tracked extensions
+# 
+# We must check .gitattributes, even if it's not staged, as LFS will use
+# .gitattributes as it exists in the working directory.
+#    
+# If new extentions are tracked with LFS, we need to verify that the repository
+# does not have previous commits with files matching that extention (not
+# tracked in LFS).  This will require extra attention, as the repo will
+# continue to display errors, unless it's history is repaired (ie. BFG, etc.)
 # TODO: Switch logic to use `git lfs track`
 echo -e "${BLD}2. Verify Git-LFS${N}"
 if [ ! -r ./.gitattributes ]
@@ -163,10 +170,10 @@ else
     fi
 
     #######################################
-    # 2a) Verify .gitattributes is being tracked
+    # 2a) Require .gitattributes is being tracked
     #   This must be done to insure git-lfs is tracking based on a committed set
     #   of lfs rules.  Otherwise, the repo could get messy between team members.
-    echo -e "${BLD}2a. Verify .gitattributes is being tracked${N}"
+    echo -e "${BLD}2a. Require .gitattributes is being tracked${N}"
     ga_filename=".gitattributes"
     added_files=$(list_new_or_modified_files)
     untracked_files=$(list_untracked_files)
@@ -215,21 +222,33 @@ else
     echo -e "${BLD}2c. Check if LFS hooks are properly installed${N}"
     echo -e "   ${ICON_WARNING} This feature is currently disabled.${N}"
 
+
+    #######################################
+    # 2d) Check repo history for previously committed/untracked files of
+    #     the newly tracked extensions
+    #   - Warn user that these changes probably require a REPO rebuild to
+    #     avoid future errors
+    echo -e "${BLD}2d. Check repo history for previously committed/untracked files of the newly tracked extensions${N}"
+    echo -e "   ${ICON_WARNING} This feature is currently disabled.${N}"
+
 fi
 
 
 
+
 #######################################
-# 3) Block files larger than X from being committed without using LFS
+# 3) Block files larger than X from being committed without using LFS tracking
 # 
 #    Because the LFS-tracked file size returned is actually the size of the
 #    pointer file instead.  You can assume any file size listed over ~130b is
 #    not being tracked.
 #
 hard_limit_human=$(echo $HARD_LIMIT| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
-echo -e "${BLD}3. Block files larger than ${hard_limit_human} from being committed without using LFS${N}"
+echo -e "${BLD}3. Block files larger than ${hard_limit_human} from being committed without using LFS tracking${N}"
 list_new_or_modified_files | check_file_size ${HARD_LIMIT} ${SOFT_LIMIT}
 files_too_large=$?
+
+# TODO: Add code examples to track all blocked extensions
 
 if [ $files_too_large -gt 0 ]; then
     commit_failure
@@ -238,56 +257,9 @@ fi
 
 
 #######################################
-# 4) Check if .gitattributes has been edited.
-#     - 4a. Require the .gitattributes changes be staged for commit
-#     - 4b. Check history for repo, and see if the extension has been
-#           previously committed, untracked sure the newly tracked files/exts
-#           had never been commmitted before
-#     - 4c. warn user that these changes probably require a REPO rebuild to
-#           avoid future errors
-#     
-# We must check .gitattributes, even if it's not staged, as LFS will use
-# .gitattributes as it exists in the working directory.
-#    
-# If new extentions are tracked with LFS, we need to verify that the repository
-# does not have previous commits with files matching that extention (not
-# tracked in LFS).  This will require extra attention, as the repo will
-# continue to display errors, unless it's history is repared (ie. BFG, etc.)
-# 
-
-echo -e "${BLD}4. Check if .gitattributes has been edited${N}"
-while read status_feed
-do
-    f=$(echo $status_feed | awk '{print $2}')
-    filename=$(basename "$f")
-    path_no_extension="${f%.*}"
-    if [[ $filename = ".gitattributes" ]] ;
-    then
-        echo -e "   $ICON_WARNING $f has been edited"
-        echo -e "      $ICON_INFO $f this file must be staged."
-    fi
-done < <(git status --porcelain)
-
-# 4a. Require the .gitattributes changes be staged for commit
-echo -e "${BLD}4a. Require the .gitattributes changes be staged for commit${N}"
-# SADNESS: I CAN NOT GET `git ls-files --modified` to return any data, yet `git ls-files` will.
-# while read unstaged_files
-# do
-#     f=$unstaged_files
-#     filename=$(basename "$f")
-#     echo -e "$unstaged_files"
-# done < <(git ls-files --modified)
-
-
-echo -e "${BLD}4b. Check repo history for previously committed/untracked files of the newly tracked extensions${N}"
-echo -e "   ${ICON_WARNING} This feature is currently disabled.${N}"
-
-
-
-#######################################
-# 5) Check if files contain an uppercase extension
-#     - 5a. if so, stop the commit and suggest renaming the files before committing
-echo -e "${BLD}5. Check if files contain an uppercase extension${N}"
+# 4) Check if files contain an uppercase extension
+#     - 4a. if so, stop the commit and suggest renaming the files before committing
+echo -e "${BLD}4. Check if files contain an uppercase extension${N}"
 while read status_feed
 do
     f=$(echo $status_feed | awk '{print $2}')
@@ -315,4 +287,4 @@ commit_success
 
 
 # BLOCK COMMIT SUCCESS FOR TESTING
-echo -e "p.s. - Just kidding, commit success is disabled for testing.\n"; exit 1;
+# echo -e "p.s. - Just kidding, commit success is disabled for testing.\n"; exit 1;
