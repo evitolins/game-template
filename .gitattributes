@@ -1,16 +1,16 @@
 ###############################################################################
 # Referenced, but not copied from:
 # https://gist.github.com/tinjaw/5a0980ffdea307834c5f2af7c69fd9a2
+# http://adaptivepatchwork.com/2012/03/01/mind-the-end-of-your-line/
 #
 # Note: Try to keep groupings listed in alphabetical order.
 ###############################################################################
 
-# Unity Smart Merge
-# NOTE: binary is set purely to avoid automatic merging by git.  Files should
-#       be saved in text format if applicable.
-*.asset binary merge=unityyamlmerge
-*.prefab binary merge=unityyamlmerge
-*.unity binary merge=unityyamlmerge
+# Line Ending Handling
+*.cs      text diff=csharp
+*.csproj  text
+*.md      text
+*.txt     text
 
 
 # Image

@@ -1,11 +1,14 @@
 #!/usr/bin/env bash
 
 # 
-# bash_utils
+# git pre-commit hook
 # 
 # Summary:
 # 
-#     Generic constants and utilities to be sourced by other scripts 
+#     This script insures that files committed within your git/git-lfs repo are
+#     properly handled.  This should block any activity which could 
+#     accidentally commit large files directly within a git repo, and avoids
+#     certain known issues with lfs behavior.
 #
 #
 # Pre-Hook Checklist:
@@ -13,17 +16,17 @@
 #     0. Check if Bash version is supported
 #     1. Check if Git version is supported
 #     2. Check if LFS version is supported
-#        - 2a. Collect LFS Tracking Extensions
-#        - 2b. Check if LFS hooks are properly installed
+#        - 2a. Require .gitattributes is being tracked, and changes committed
+#        - 2b. Collect LFS Tracking Extensions
+#        - 2c. Check if LFS hooks are properly installed
+#        - 2d. Check repo history for previously committed/untracked files of
+#              the newly tracked extensions
+#          - Warn user that these changes probably require a REPO rebuild to
+#            avoid future errors
 #     3. Block files larger than X from being committed without using LFS
-#     4. Check if .gitattributes has been edited
-#         - 4a. Require the .gitattributes changes be staged for commit
-#         - 4b. Check repo history for previously committed/untracked files of
-#               the newly tracked extensions
-#           - Warn user that these changes probably require a REPO rebuild to
-#             avoid future errors
-#     5. Check if files contain an uppercase extension
-#         - 5a. if so, stop the commit and suggest renaming the files before
+#        tracking
+#     4. Check if files contain an uppercase extension
+#         - 4a. if so, stop the commit and suggest renaming the files before
 #               committing
 #
 #
@@ -48,7 +51,7 @@ commit_failure ()
 commit_success ()
 {
     echo ""
-    echo -e "${icon_mugs} ${G}Your commit was successful! ${BLD}Carry on my wayward son...${N}"
+    echo -e "${ICON_MUGS} ${G}Your commit was successful! ${BLD}Carry on my wayward son...${N}"
     echo ""
 }
 
@@ -67,33 +70,14 @@ fi
 
 
 # File Size Limits
-hard_limit=$(($MB*2))
-soft_limit=$(($MB*1))
-hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
-soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
-
-
-
-
+HARD_LIMIT=$(($MB*2))
+SOFT_LIMIT=$(($MB*1))
 
 # Gather Needed Data
-required_git_version="2.10.2"
-required_lfs_version="1.5.5"
+REQUIRED_GIT_VERSION="2.10.2"
+REQUIRED_LFS_VERSION="1.5.5"
 
-user_git_version=$(git version | awk '{print $3}')
-user_lfs_version=$(git lfs version | awk '{print $1}' | awk -F '/' '{print $2}')
 lfsTrackedExts=""
-
-compare_git_version=$(vercomp $user_git_version $required_git_version)
-compare_lfs_version=$(vercomp $user_lfs_version $required_lfs_version)
-
-state_git_version_ok=$( [ ! "$compare_git_version" -lt 2 ]; echo $? )
-state_lfs_version_ok=$( [ ! "$compare_lfs_version" -lt 2 ]; echo $? )
-state_lfs_is_required=false
-state_lfs_hooks_are_installed=false
-state_lfs_gitattributes_edited=false
-state_lfs_uppercase_fileexts_detected=false
-state_errors=0
 
 
 
@@ -102,7 +86,7 @@ state_errors=0
 
 
 echo -e "${BLD}------------------------------------------------------${N}"
-echo -e "${BLD}              Hack and Paint [pre-commit]${N}"
+echo -e "${BLD}              Hack and Paint [pre-commit]             ${N}"
 echo -e "${BLD}------------------------------------------------------${N}"
 
 # Check if this is the initial commit
@@ -120,12 +104,25 @@ fi
 #######################################
 # 1) Check if Git version is supported
 echo -e "${BLD}1. Verify Git${N}"
-git_compare_string="$required_git_version $(vercomp_char $compare_git_version) $user_git_version"
+# Check if git is installed
+# Gather Env Data
+user_git_version=$(git version | awk '{print $3}')
+compare_git_version=$(vercomp $user_git_version $REQUIRED_GIT_VERSION)
+state_git_version_ok=$( [ ! "$compare_git_version" -lt 2 ]; echo $? )
+
+if [ -z "$user_git_version" ];
+then
+    echo -e "   $ICON_NEGATIVE git does not appear to be installed"
+    commit_failure
+fi  
+
+# Check for required version
+git_compare_string="$user_git_version $(vercomp_char $compare_git_version) $REQUIRED_GIT_VERSION"
 if [ "$state_git_version_ok" == 1 ] ;
 then
-    echo -e "   $icon_positive GIT is valid: $git_compare_string"
+    echo -e "   $ICON_POSITIVE git is valid: $git_compare_string"
 else
-    echo -e "   $icon_negative GIT is not valid: $git_compare_string"
+    echo -e "   $ICON_NEGATIVE git is not valid: $git_compare_string"
     commit_failure
 fi
 
@@ -134,30 +131,85 @@ fi
 #######################################
 # 2) Check if LFS is being used and version is supported
 # If .gitattributes exists, collect all tracked extensions
+# 
+# We must check .gitattributes, even if it's not staged, as LFS will use
+# .gitattributes as it exists in the working directory.
+#    
+# If new extentions are tracked with LFS, we need to verify that the repository
+# does not have previous commits with files matching that extention (not
+# tracked in LFS).  This will require extra attention, as the repo will
+# continue to display errors, unless it's history is repaired (ie. BFG, etc.)
 # TODO: Switch logic to use `git lfs track`
 echo -e "${BLD}2. Verify Git-LFS${N}"
-if [ -r ./.gitattributes ]
+if [ ! -r ./.gitattributes ]
 then
-    lfs_compare_string="$required_lfs_version $(vercomp_char $compare_lfs_version) $user_lfs_version"
+    echo -e "   $ICON_INFO .gitattributes missing. Skipping git-lfs requirements." 
+    state_repo_uses_LFS=false
+    lfsTrackedExts=""
+else    
+    # Gather Env Data
+    user_lfs_version=$(git lfs version | awk '{print $1}' | awk -F '/' '{print $2}')
+    compare_lfs_version=$(vercomp $user_lfs_version $REQUIRED_LFS_VERSION)
+    state_lfs_version_ok=$( [ ! "$compare_lfs_version" -lt 2 ]; echo $? )
+
+    echo -e "   $ICON_INFO .gitattributes is found. Repo requires git-lfs"
+    # Check if git-lfs is installed
+    if [ -z "$user_lfs_version" ];
+    then
+        echo -e "   $ICON_NEGATIVE git-lfs does not appear to be installed"
+        commit_failure
+    fi  
+    # Check for required version
+    lfs_compare_string="$user_lfs_version $(vercomp_char $compare_lfs_version) $REQUIRED_LFS_VERSION"
     if [ "$state_lfs_version_ok" == 1 ] ;
     then
-        echo -e "   $icon_positive LFS is valid: $lfs_compare_string" 
+        echo -e "   $ICON_POSITIVE git-lfs is valid: $lfs_compare_string" 
     else
-        echo -e "   $icon_negative LFS is not valid: $lfs_compare_string"
+        echo -e "   $ICON_NEGATIVE git-lfs is not valid: $lfs_compare_string"
         commit_failure
     fi
 
     #######################################
-    # 2a) Collect LFS Tracking Extensions
+    # 2a) Require .gitattributes is being tracked
+    #   This must be done to insure git-lfs is tracking based on a committed set
+    #   of lfs rules.  Otherwise, the repo could get messy between team members.
+    echo -e "${BLD}2a. Require .gitattributes is being tracked${N}"
+    ga_filename=".gitattributes"
+    added_files=$(list_new_or_modified_files)
+    untracked_files=$(list_untracked_files)
+    ga_is_untracked=""
+    ga_is_added=""
+
+    if `contains "$added_files" "$ga_filename"`;
+        then
+        ga_is_added="true"
+    fi
+
+    if `contains "$untracked_files" "$ga_filename"`;
+        then
+        ga_is_untracked="true"
+    fi
+
+    # Not tracked, or added
+    if [[ $ga_is_untracked ]];
+        then
+        echo -e "   $ICON_NEGATIVE .gitattributes is present, but not yet being tracked"
+        echo -e "   $ICON_INFO please run ${CODE} git add .gitattributes ${N} before committing your changes"
+        commit_failure
+    fi
+
+
+    #######################################
+    # 2b) Collect LFS Tracking Extensions
     #  NOTICE: This will probably break, if we start tracking directories, etc
     #  NOTICE: This also assumes there is only a .gitattributes in the root directory
-    echo -e "${BLD}2a. Collect LFS Tracking Extensions${N}"
+    echo -e "${BLD}2b. Collect LFS Tracking Extensions${N}"
     state_repo_uses_LFS=true
     lfsTrackedExtsCount=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | wc -l| awk '{print $1}')
     lfsTrackedExtsArr=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort)
     lfsTrackedExts=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort | paste -sd "," -)
-    echo -e "   $icon_positive .gitattributes found"
-    echo -e "      $icon_info $lfsTrackedExtsCount tracked extensions found"
+    echo -e "   $ICON_POSITIVE .gitattributes found"
+    echo -e "      $ICON_INFO $lfsTrackedExtsCount tracked extensions found"
     # # Echo each extension
     # for i in $lfsTrackedExtsArr
     # do
@@ -165,26 +217,38 @@ then
     # done
 
     #######################################
-    # 2b) Check if LFS hooks are properly installed
-    git lfs install
-else
-    echo -e "   $icon_warning .gitattributes missing" 
-    state_repo_uses_LFS=false
-    lfsTrackedExts=""
+    # 2c) Check if LFS hooks are properly installed
+    # git lfs install
+    echo -e "${BLD}2c. Check if LFS hooks are properly installed${N}"
+    echo -e "   ${ICON_WARNING} This feature is currently disabled.${N}"
+
+
+    #######################################
+    # 2d) Check repo history for previously committed/untracked files of
+    #     the newly tracked extensions
+    #   - Warn user that these changes probably require a REPO rebuild to
+    #     avoid future errors
+    echo -e "${BLD}2d. Check repo history for previously committed/untracked files of the newly tracked extensions${N}"
+    echo -e "   ${ICON_WARNING} This feature is currently disabled.${N}"
+
 fi
 
 
 
+
 #######################################
-# 3) Block files larger than X from being committed without using LFS
+# 3) Block files larger than X from being committed without using LFS tracking
 # 
 #    Because the LFS-tracked file size returned is actually the size of the
 #    pointer file instead.  You can assume any file size listed over ~130b is
 #    not being tracked.
-#    
-echo -e "${BLD}3. Block files larger than ${hard_limit_human} from being committed without using LFS${N}"
-list_new_or_modified_files | check_file_size
+#
+hard_limit_human=$(echo $HARD_LIMIT| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
+echo -e "${BLD}3. Block files larger than ${hard_limit_human} from being committed without using LFS tracking${N}"
+list_new_or_modified_files | check_file_size ${HARD_LIMIT} ${SOFT_LIMIT}
 files_too_large=$?
+
+# TODO: Add code examples to track all blocked extensions
 
 if [ $files_too_large -gt 0 ]; then
     commit_failure
@@ -193,56 +257,9 @@ fi
 
 
 #######################################
-# 4) Check if .gitattributes has been edited.
-#     - 4a. Require the .gitattributes changes be staged for commit
-#     - 4b. Check history for repo, and see if the extension has been
-#           previously committed, untracked sure the newly tracked files/exts
-#           had never been commmitted before
-#     - 4c. warn user that these changes probably require a REPO rebuild to
-#           avoid future errors
-#     
-# We must check .gitattributes, even if it's not staged, as LFS will use
-# .gitattributes as it exists in the working directory.
-#    
-# If new extentions are tracked with LFS, we need to verify that the repository
-# does not have previous commits with files matching that extention (not
-# tracked in LFS).  This will require extra attention, as the repo will
-# continue to display errors, unless it's history is repared (ie. BFG, etc.)
-# 
-
-echo -e "${BLD}4. Check if .gitattributes has been edited${N}"
-while read status_feed
-do
-    f=$(echo $status_feed | awk '{print $2}')
-    filename=$(basename "$f")
-    path_no_extension="${f%.*}"
-    if [[ $filename = ".gitattributes" ]] ;
-    then
-        echo -e "   $icon_warning $f has been edited"
-        echo -e "      $icon_info $f this file must be staged."
-    fi
-done < <(git status --porcelain)
-
-# 4a. Require the .gitattributes changes be staged for commit
-echo -e "${BLD}4a. Require the .gitattributes changes be staged for commit${N}"
-# SADNESS: I CAN NOT GET `git ls-files --modified` to return any data, yet `git ls-files` will.
-# while read unstaged_files
-# do
-#     f=$unstaged_files
-#     filename=$(basename "$f")
-#     echo -e "$unstaged_files"
-# done < <(git ls-files --modified)
-
-
-echo -e "${BLD}4b. Check repo history for previously committed/untracked files of the newly tracked extensions${N}"
-echo -e "   ${icon_warning} This feature is currently disabled.${N}"
-
-
-
-#######################################
-# 5) Check if files contain an uppercase extension
-#     - 5a. if so, stop the commit and suggest renaming the files before committing
-echo -e "${BLD}5. Check if files contain an uppercase extension${N}"
+# 4) Check if files contain an uppercase extension
+#     - 4a. if so, stop the commit and suggest renaming the files before committing
+echo -e "${BLD}4. Check if files contain an uppercase extension${N}"
 while read status_feed
 do
     f=$(echo $status_feed | awk '{print $2}')
@@ -253,8 +270,8 @@ do
     ext_lowercase=$(echo "$ext" | awk '{print tolower($0)}')
     if [[ $ext =~ [A-Z] ]] ;
     then
-        echo -e "   $icon_negative $f can not have an uppercase file extension." 
-        echo -e "      $icon_info please rename using ${CODE} git mv $f ${path_no_extension}.${ext_lowercase} ${N}" 
+        echo -e "   $ICON_NEGATIVE $f can not have an uppercase file extension." 
+        echo -e "      $ICON_INFO please rename using ${CODE} git mv $f ${path_no_extension}.${ext_lowercase} ${N}" 
         commit_failure
     fi
 done < <(git lfs status --porcelain)
@@ -270,4 +287,4 @@ commit_success
 
 
 # BLOCK COMMIT SUCCESS FOR TESTING
-echo -e "p.s. - Just kidding, commit success is disabled for testing.\n"; exit 1;
+# echo -e "p.s. - Just kidding, commit success is disabled for testing.\n"; exit 1;

@@ -19,7 +19,14 @@
 #     - https://www.youtube.com/watch?v=OLneiOqEoU8
 #     - http://www.gamasutra.com/blogs/TimPettersen/20161206/286981/The_complete_guide_to_Unity__Git.php
 #     - http://www.jameskeats.com/blogs/post/Unitys-SmartMerge-Meets-SourceTree/
-#     
+#
+#
+# Notes:
+# 
+# Locating a user's global git config file is not completely straight forward
+#     - local: `git config --local --list --show-origin | grep "config" | awk '{print $1}' | sort -u | sed -e "s/^file://"` (however we can pretty much assume `.git/config`)
+#     - global: `git config --global --list --show-origin | grep ".gitconfig" | awk '{print $1}' | sort -u | sed -e "s/^file://"`
+#
 
 # Import Dependencies
 #   - paths must be relative to the git repo's root path
@@ -59,20 +66,6 @@ elif [[ "$OSTYPE" == "msys" ]]; then
 else
     echo -e "${icon_negative} "${OSTYPE}" is not a recognized OS"
 fi
-
-# Backup File
-backup_file () {
-    filename=$1
-    filetime=$(date +%Y%m%d_%H%M%S)
-
-    if cp ${filename} ${filename}_${filetime}
-    then
-        echo -e "${icon_positive} Backup created: ${filename} -> ${filename}_${filetime} ${N}"
-    else
-        echo -e "${icon_negative} Backup failed: ${filename}"
-    fi
-}
-
 
 
 
@@ -119,13 +112,25 @@ then
     git config --local mergetool.unityyamlmerge.keepBackup false
     git config --local mergetool.unityyamlmerge.path "${CHOSEN_TOOL_PATH}"
     git config --local mergetool.unityyamlmerge.cmd "\"${CHOSEN_TOOL_PATH}\" merge -p \"\$BASE\" \"\$REMOTE\" \"\$LOCAL\" \"\$MERGED\""
-    git config --local mergetool.sourcetree.cmd "\"${CHOSEN_TOOL_PATH}\" merge -p \"\$BASE\" \"\$REMOTE\" \"\$LOCAL\" \"\$MERGED\""
-    git config --local mergetool.sourcetree.trustexitcode true
+    ## SourceTree does not allow configs to be edited externally :(
+    # git config --local diff.sourcetree.cmd "\"${CHOSEN_TOOL_PATH}\" merge -p \"\$BASE\" \"\$REMOTE\" \"\$LOCAL\" \"\$MERGED\""
+    # git config --local diff.sourcetree.trustexitcode true
+    # git config --local mergetool.sourcetree.cmd "\"${CHOSEN_TOOL_PATH}\" merge -p \"\$BASE\" \"\$REMOTE\" \"\$LOCAL\" \"\$MERGED\""
+    # git config --local mergetool.sourcetree.trustexitcode true
     echo -e "${icon_positive} .git/config Updated${N}"
+    echo -e "${icon_warning} You must manually install the settings for SourceTree.  See \`utils/README.md\` for details.${N}"
+    echo -e "    - ${icon_info} ${CHOSEN_TOOL_PATH}${N}"
+    echo -e "    - ${icon_info} merge -p \"\$BASE\" \"\$REMOTE\" \"\$LOCAL\" \"\$MERGED\"${N}"
 else
     echo -e "${icon_negative} Given path was not executable. Git Config not updated properly."
     exit;
 fi
+
+# d) Install Diff Tool Fallbacks
+# - create copy of original, if copy doen't already exist
+# - prepend proper settings to file
+echo -e "${icon_warning} You must manually install the proper fallback settings to \`mergespecfile.txt\`.  See \`utils/README.md\` for details.${N}"
+
 
 echo -e "${icon_mugs} Install Complete!"
 

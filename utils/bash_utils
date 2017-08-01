@@ -29,17 +29,37 @@ INV="\033[1;7m" # Inverse
 CODE="\033[1;93;100m" # Fill Dark Gray
 
 # Icons
-icon_info="${BLD}\xE2\x84\xB9 INFO:${N}"
-icon_positive="${G}\xE2\x9C\x94 SUCCESS:${N}"
-icon_warning="${Y}\xE2\x9A\xA0 WARNING:${N}"
-icon_negative="${R}\xE2\x9C\x98 FAILED:${N}"
-icon_mugs="${Y}\xF0\x9F\x8D\xBB CHEERS!:${N}"
+ICON_INFO="${BLD}\xE2\x84\xB9 INFO:${N}"
+ICON_POSITIVE="${G}\xE2\x9C\x94 SUCCESS:${N}"
+ICON_WARNING="${Y}\xE2\x9A\xA0 WARNING:${N}"
+ICON_NEGATIVE="${R}\xE2\x9C\x98 FAILED:${N}"
+ICON_MUGS="${Y}\xF0\x9F\x8D\xBB CHEERS!:${N}"
 
 
 # Data
 MB=1048576
 
 
+# SourceTree output doesn't support bash colors or icons.
+_string=$PYTHONPATH
+_substring="SourceTree"
+if test "${PYTHONPATH#*$_substring}" != "$PYTHONPATH"
+    then
+    # SourceTree Detected.  Remove bash styling for cleaner output.
+    G=""
+    GY=""
+    Y=""
+    R=""
+    BLD=""
+    N=""
+    INV=""
+    CODE=""
+    ICON_INFO=""
+    ICON_POSITIVE=""
+    ICON_WARNING=""
+    ICON_NEGATIVE=""
+    ICON_MUGS=""
+fi
 
 
 # --------------------------------------------
@@ -86,6 +106,7 @@ vercomp () {
     return 0
 }
 
+
 vercomp_char () {
     case $1 in
         0) op='=';;
@@ -97,10 +118,20 @@ vercomp_char () {
 
 
 # http://stackoverflow.com/questions/39576257/how-to-limit-file-size-on-commit
+# https://stackoverflow.com/questions/6879501/filter-git-diff-by-type-of-change
 list_new_or_modified_files()
 {
-    git diff --staged --name-status|sed -e '/^D/ d; /^D/! s/.\s\+//'| awk '{print $2}'
+    git diff --cached --name-only --diff-filter=AM
 }
+
+
+# Lists untracked files, which are shouldn't be ignored
+# https://stackoverflow.com/questions/17358953/how-to-make-a-list-of-all-the-cached-files-and-untracked-files-in-a-git-reposito
+list_untracked_files()
+{
+    git ls-files --others --exclude-standard
+}
+
 
 # Remove leading and trailing double quotes
 unmunge()
@@ -110,9 +141,15 @@ unmunge()
     echo "$result"
 }
 
+
 # Check filesize for all staged files
+#   Return: > 0 if hard_limit is breached
 check_file_size()
 {
+    hard_limit=$1
+    hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
+    soft_limit=$2
+    soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
     n=0
     while read -r munged_filename
     do
@@ -125,20 +162,50 @@ check_file_size()
 
         if [ "$s" -gt $hard_limit ]
         then
-            echo -e "   $icon_negative Exceeded hard size limit ($hard_limit_human): $munged_filename ($s_human)"
-            echo -e "      $icon_info You must track this extension. Run ${CODE} git lfs track \"*.${ext}\" ${N} before proceeding."
+            echo -e "   $ICON_NEGATIVE Exceeded hard size limit ($hard_limit_human): $munged_filename ($s_human)"
+            echo -e "      $ICON_INFO You must track this extension. Run ${CODE} git lfs track \"*.${ext}\" ${N} before proceeding."
             n=$((n+1))
         elif [ "$s" -gt $soft_limit ]
         then
-            echo -e "   $icon_warning Exceeded soft size limit ($soft_limit_human): $munged_filename ($s_human)"
-            echo -e "      $icon_info Please consider tracking this extension using ${CODE} git lfs track \"*.${ext}\" ${N}"
+            echo -e "   $ICON_WARNING Exceeded soft size limit ($soft_limit_human): $munged_filename ($s_human)"
+            echo -e "      $ICON_INFO Please consider tracking this extension using ${CODE} git lfs track \"*.${ext}\" ${N}"
         fi
     done
 
     return $n
 }
 
+# string_contains(string, substring)
+#
+# Returns 0 if the specified string contains the specified substring,
+# otherwise returns 1.
+string_contains() {
+    string="$1"
+    substring="$2"
+    if test "${string#*$substring}" != "$string"
+    then
+        return 0    # $substring is in $string
+    else
+        return 1    # $substring is not in $string
+    fi
+}
+
+
 # http://stackoverflow.com/questions/8063228/how-do-i-check-if-a-variable-exists-in-a-list-in-bash
 contains() {
-    [[ $1 =~ (^|[[:space:]])$2($|[[:space:]]) ]] && exit 0 || exit 1
+    [[ "$1" =~ (^|[[:space:]])"$2"($|[[:space:]]) ]] && return 0 || return 1
+}
+
+
+# Backup File
+backup_file () {
+    filename=$1
+    filetime=$(date +%Y%m%d_%H%M%S)
+
+    if cp ${filename} ${filename}_${filetime}
+    then
+        echo -e "${ICON_POSITIVE} Backup created: ${filename} -> ${filename}_${filetime} ${N}"
+    else
+        echo -e "${ICON_NEGATIVE} Backup failed: ${filename}"
+    fi
 }
