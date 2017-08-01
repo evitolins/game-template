@@ -167,11 +167,26 @@ else
     #   This must be done to insure git-lfs is tracking based on a committed set
     #   of lfs rules.  Otherwise, the repo could get messy between team members.
     echo -e "${BLD}2a. Verify .gitattributes is being tracked${N}"
+    ga_filename=".gitattributes"
+    added_files=$(list_new_or_modified_files)
     untracked_files=$(list_untracked_files)
-    ga_is_untracked=$(contains ".gitattributes" $untracked_files)
-    if [[ -n ga_is_untracked ]];
+    ga_is_untracked=""
+    ga_is_added=""
+
+    if `contains "$added_files" "$ga_filename"`;
         then
-        echo -e "   $ICON_NEGATIVE .gitattributes is present, but not being tracked"
+        ga_is_added="true"
+    fi
+
+    if `contains "$untracked_files" "$ga_filename"`;
+        then
+        ga_is_untracked="true"
+    fi
+
+    # Not tracked, or added
+    if [[ $ga_is_untracked ]];
+        then
+        echo -e "   $ICON_NEGATIVE .gitattributes is present, but not yet being tracked"
         echo -e "   $ICON_INFO please run ${CODE} git add .gitattributes ${N} before committing your changes"
         commit_failure
     fi
