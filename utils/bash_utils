@@ -124,6 +124,13 @@ list_new_or_modified_files()
     git diff --cached --name-only --diff-filter=AM
 }
 
+# https://stackoverflow.com/questions/6879501/filter-git-diff-by-type-of-change
+list_tracked_modified_files()
+{
+    git diff --name-only --diff-filter=AM
+}
+
+
 
 # Lists untracked files, which are shouldn't be ignored
 # https://stackoverflow.com/questions/17358953/how-to-make-a-list-of-all-the-cached-files-and-untracked-files-in-a-git-reposito
