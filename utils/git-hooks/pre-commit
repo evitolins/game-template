@@ -176,18 +176,23 @@ else
     echo -e "${BLD}2a. Require .gitattributes is being tracked${N}"
     ga_filename=".gitattributes"
     added_files=$(list_new_or_modified_files)
+    modified_files=$(list_tracked_modified_files)
     untracked_files=$(list_untracked_files)
     ga_is_untracked=""
     ga_is_added=""
+    ga_is_modified=""
 
     if `contains "$added_files" "$ga_filename"`;
         then
         ga_is_added="true"
     fi
-
     if `contains "$untracked_files" "$ga_filename"`;
         then
         ga_is_untracked="true"
+    fi
+    if `contains "$modified_files" "$ga_filename"`;
+        then
+        ga_is_modified="true"
     fi
 
     # Not tracked, or added
@@ -197,6 +202,15 @@ else
         echo -e "   $ICON_INFO please run ${CODE} git add .gitattributes ${N} before committing your changes"
         commit_failure
     fi
+
+    # Edited, but not added for commit
+    if [[ $ga_is_modified ]];
+        then
+        echo -e "   $ICON_NEGATIVE .gitattributes has changes which need to be committed"
+        echo -e "   $ICON_INFO please run ${CODE} git add .gitattributes ${N} before committing your changes"
+        commit_failure
+    fi
+    echo -e "   $ICON_POSITIVE .gitattributes is tracked and fully committed"
 
 
     #######################################
@@ -208,7 +222,6 @@ else
     lfsTrackedExtsCount=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | wc -l| awk '{print $1}')
     lfsTrackedExtsArr=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort)
     lfsTrackedExts=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort | paste -sd "," -)
-    echo -e "   $ICON_POSITIVE .gitattributes found"
     echo -e "      $ICON_INFO $lfsTrackedExtsCount tracked extensions found"
     # # Echo each extension
     # for i in $lfsTrackedExtsArr
