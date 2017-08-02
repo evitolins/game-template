@@ -13,11 +13,10 @@ will guide you to setup a solid method to do so using the follwing tools:
 
 Getting Started
 ------------------------------------------
-First off... watch this [video](https://www.youtube.com/watch?v=EQB-N-ClO9g).
+First off... __[► Watch this Video](https://www.youtube.com/watch?v=EQB-N-ClO9g)__.
 
-We have modified some of the process below, mainly to use the application
-"KDiff" instead of "Meld", but otherwise is the workflow we have choosen to
-use.
+This is the workflow we have choosen to use. However, we have modified some of
+the process below, mainly to use the application "KDiff" instead of "Meld". 
 
 
 KDiff3 Installation
@@ -49,7 +48,7 @@ This process must be done manually in the SourceTree's preferences UI.
 _Preferences/Options > Diff > External Diff/Merge_
 
 > _Windows Example:_
-> - __Diff Command:__ `C:\Program Files\Unity\Editor\Tools\UnityYAMLMerge`
+> - __Diff Command:__ `C:\Program Files\Unity\Editor\Data\Tools\UnityYAMLMerge`
 > - __Arguments:__   `merge -p $BASE $REMOTE $LOCAL $MERGED`
 > 
 > _MacOS Example:_
@@ -77,9 +76,20 @@ will be used for merging activity both for Unity files, or any other file.
 #### Installation
 Copy and paste the code below, at the top of your `mergespecfile.txt` file.
 
-_The KDiff3 application path ("/usr/local/bin/kdiff3") may require editing,
+_The KDiff3 application path (ie. "/usr/local/bin/kdiff3") may require editing,
 based on installation location_
 
+##### Windows
+```bash
+# Unity-Specific Diff Tool
+unity use "%programs%\KDiff3\kdiff3.exe" "%r" "%b" "%l" -o "%d" --auto
+prefab use "%programs%\KDiff3\kdiff3.exe" "%r" "%b" "%l" -o "%d" --auto
+
+# Fallback Diff Tool
+* use "/usr/local/bin/kdiff3" "%r" "%b" "%l" -o "%d" --auto
+```
+
+##### MacOS
 ```bash
 # Unity-Specific Diff Tool
 unity use "/usr/local/bin/kdiff3" "%r" "%b" "%l" -o "%d" --auto
