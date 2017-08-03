@@ -107,24 +107,30 @@ echo -e "${BLD}1. Verify Git${N}"
 # Check if git is installed
 # Gather Env Data
 user_git_version=$(git version | awk '{print $3}')
-compare_git_version=$(vercomp $user_git_version $REQUIRED_GIT_VERSION)
-state_git_version_ok=$( [ ! "$compare_git_version" -lt 2 ]; echo $? )
+# compare_git_version=$(vercomp $user_git_version $REQUIRED_GIT_VERSION)
+# state_git_version_ok=$( [ ! "$compare_git_version" -lt 2 ]; echo $? )
 
 if [ -z "$user_git_version" ];
 then
     echo -e "   $ICON_NEGATIVE git does not appear to be installed"
     commit_failure
+else
+    echo -e "   $ICON_INFO git v${user_git_version} found" 
 fi  
 
-# Check for required version
-git_compare_string="$user_git_version $(vercomp_char $compare_git_version) $REQUIRED_GIT_VERSION"
-if [ "$state_git_version_ok" == 1 ] ;
-then
-    echo -e "   $ICON_POSITIVE git is valid: $git_compare_string"
-else
-    echo -e "   $ICON_NEGATIVE git is not valid: $git_compare_string"
-    commit_failure
-fi
+# ------------------------------------------------------------
+# DISABLED UNTIL MORE ROBUST VERSION CHECKING IMPLEMENTED
+# ------------------------------------------------------------
+# # Check for required version
+# git_compare_string="$user_git_version $(vercomp_char $compare_git_version) $REQUIRED_GIT_VERSION"
+# if [ "$state_git_version_ok" == 1 ] ;
+# then
+#     echo -e "   $ICON_POSITIVE git is valid: $git_compare_string"
+# else
+#     echo -e "   $ICON_NEGATIVE git is not valid: $git_compare_string"
+#     commit_failure
+# fi
+
 
 
 
@@ -158,16 +164,22 @@ else
     then
         echo -e "   $ICON_NEGATIVE git-lfs does not appear to be installed"
         commit_failure
-    fi  
-    # Check for required version
-    lfs_compare_string="$user_lfs_version $(vercomp_char $compare_lfs_version) $REQUIRED_LFS_VERSION"
-    if [ "$state_lfs_version_ok" == 1 ] ;
-    then
-        echo -e "   $ICON_POSITIVE git-lfs is valid: $lfs_compare_string" 
     else
-        echo -e "   $ICON_NEGATIVE git-lfs is not valid: $lfs_compare_string"
-        commit_failure
+        echo -e "   $ICON_INFO git-lfs v${user_lfs_version} found"
     fi
+
+    # ------------------------------------------------------------
+    # DISABLED UNTIL MORE ROBUST VERSION CHECKING IMPLEMENTED
+    # ------------------------------------------------------------
+    # # Check for required version
+    # lfs_compare_string="$user_lfs_version $(vercomp_char $compare_lfs_version) $REQUIRED_LFS_VERSION"
+    # if [ "$state_lfs_version_ok" == 1 ] ;
+    # then
+    #     echo -e "   $ICON_POSITIVE git-lfs is valid: $lfs_compare_string" 
+    # else
+    #     echo -e "   $ICON_NEGATIVE git-lfs is not valid: $lfs_compare_string"
+    #     commit_failure
+    # fi
 
     #######################################
     # 2a) Require .gitattributes is being tracked
