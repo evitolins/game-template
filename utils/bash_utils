@@ -117,12 +117,40 @@ vercomp_char () {
 }
 
 
+testvercomp () {
+    vercomp $1 $2
+    case $? in
+        0) op='=';;
+        1) op='>';;
+        2) op='<';;
+    esac
+    if [[ $op != $3 ]]
+    then
+        # echo "FAIL: Expected '$3', Actual '$op', Arg1 '$1', Arg2 '$2'"
+        echo 1
+        return 1
+    else
+        # echo "Pass: '$1 $op $2'"
+        echo 0
+        return 0
+    fi
+}
+
+
+
 # http://stackoverflow.com/questions/39576257/how-to-limit-file-size-on-commit
 # https://stackoverflow.com/questions/6879501/filter-git-diff-by-type-of-change
 list_new_or_modified_files()
 {
     git diff --cached --name-only --diff-filter=AM
 }
+
+# https://stackoverflow.com/questions/6879501/filter-git-diff-by-type-of-change
+list_tracked_modified_files()
+{
+    git diff --name-only --diff-filter=AM
+}
+
 
 
 # Lists untracked files, which are shouldn't be ignored

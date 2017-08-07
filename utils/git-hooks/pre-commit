@@ -107,24 +107,30 @@ echo -e "${BLD}1. Verify Git${N}"
 # Check if git is installed
 # Gather Env Data
 user_git_version=$(git version | awk '{print $3}')
-compare_git_version=$(vercomp $user_git_version $REQUIRED_GIT_VERSION)
-state_git_version_ok=$( [ ! "$compare_git_version" -lt 2 ]; echo $? )
+# compare_git_version=$(vercomp $user_git_version $REQUIRED_GIT_VERSION)
+# state_git_version_ok=$( [ ! "$compare_git_version" -lt 2 ]; echo $? )
 
 if [ -z "$user_git_version" ];
 then
     echo -e "   $ICON_NEGATIVE git does not appear to be installed"
     commit_failure
+else
+    echo -e "   $ICON_INFO git v${user_git_version} found" 
 fi  
 
-# Check for required version
-git_compare_string="$user_git_version $(vercomp_char $compare_git_version) $REQUIRED_GIT_VERSION"
-if [ "$state_git_version_ok" == 1 ] ;
-then
-    echo -e "   $ICON_POSITIVE git is valid: $git_compare_string"
-else
-    echo -e "   $ICON_NEGATIVE git is not valid: $git_compare_string"
-    commit_failure
-fi
+# ------------------------------------------------------------
+# DISABLED UNTIL MORE ROBUST VERSION CHECKING IMPLEMENTED
+# ------------------------------------------------------------
+# # Check for required version
+# git_compare_string="$user_git_version $(vercomp_char $compare_git_version) $REQUIRED_GIT_VERSION"
+# if [ "$state_git_version_ok" == 1 ] ;
+# then
+#     echo -e "   $ICON_POSITIVE git is valid: $git_compare_string"
+# else
+#     echo -e "   $ICON_NEGATIVE git is not valid: $git_compare_string"
+#     commit_failure
+# fi
+
 
 
 
@@ -158,16 +164,22 @@ else
     then
         echo -e "   $ICON_NEGATIVE git-lfs does not appear to be installed"
         commit_failure
-    fi  
-    # Check for required version
-    lfs_compare_string="$user_lfs_version $(vercomp_char $compare_lfs_version) $REQUIRED_LFS_VERSION"
-    if [ "$state_lfs_version_ok" == 1 ] ;
-    then
-        echo -e "   $ICON_POSITIVE git-lfs is valid: $lfs_compare_string" 
     else
-        echo -e "   $ICON_NEGATIVE git-lfs is not valid: $lfs_compare_string"
-        commit_failure
+        echo -e "   $ICON_INFO git-lfs v${user_lfs_version} found"
     fi
+
+    # ------------------------------------------------------------
+    # DISABLED UNTIL MORE ROBUST VERSION CHECKING IMPLEMENTED
+    # ------------------------------------------------------------
+    # # Check for required version
+    # lfs_compare_string="$user_lfs_version $(vercomp_char $compare_lfs_version) $REQUIRED_LFS_VERSION"
+    # if [ "$state_lfs_version_ok" == 1 ] ;
+    # then
+    #     echo -e "   $ICON_POSITIVE git-lfs is valid: $lfs_compare_string" 
+    # else
+    #     echo -e "   $ICON_NEGATIVE git-lfs is not valid: $lfs_compare_string"
+    #     commit_failure
+    # fi
 
     #######################################
     # 2a) Require .gitattributes is being tracked
@@ -176,18 +188,23 @@ else
     echo -e "${BLD}2a. Require .gitattributes is being tracked${N}"
     ga_filename=".gitattributes"
     added_files=$(list_new_or_modified_files)
+    modified_files=$(list_tracked_modified_files)
     untracked_files=$(list_untracked_files)
     ga_is_untracked=""
     ga_is_added=""
+    ga_is_modified=""
 
     if `contains "$added_files" "$ga_filename"`;
         then
         ga_is_added="true"
     fi
-
     if `contains "$untracked_files" "$ga_filename"`;
         then
         ga_is_untracked="true"
+    fi
+    if `contains "$modified_files" "$ga_filename"`;
+        then
+        ga_is_modified="true"
     fi
 
     # Not tracked, or added
@@ -197,6 +214,15 @@ else
         echo -e "   $ICON_INFO please run ${CODE} git add .gitattributes ${N} before committing your changes"
         commit_failure
     fi
+
+    # Edited, but not added for commit
+    if [[ $ga_is_modified ]];
+        then
+        echo -e "   $ICON_NEGATIVE .gitattributes has changes which need to be committed"
+        echo -e "   $ICON_INFO please run ${CODE} git add .gitattributes ${N} before committing your changes"
+        commit_failure
+    fi
+    echo -e "   $ICON_POSITIVE .gitattributes is tracked and fully committed"
 
 
     #######################################
@@ -208,7 +234,6 @@ else
     lfsTrackedExtsCount=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | wc -l| awk '{print $1}')
     lfsTrackedExtsArr=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort)
     lfsTrackedExts=$(grep "filter=lfs diff=lfs merge=lfs -text" .gitattributes |sed 's/\|/ /'| awk '{print $1}'| cut -d'.' -f 2 | sort | paste -sd "," -)
-    echo -e "   $ICON_POSITIVE .gitattributes found"
     echo -e "      $ICON_INFO $lfsTrackedExtsCount tracked extensions found"
     # # Echo each extension
     # for i in $lfsTrackedExtsArr
