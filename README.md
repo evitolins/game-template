@@ -10,59 +10,58 @@ Basic Usage
 
 ### a) Documentation
 
-Store all documenation for the game within `/docs/`.  This includes meeting notes, schedules, planning and game design files.
+Store all documenation for the game within `/docs/`.  This includes meeting
+notes, schedules, planning and game design files.
 
 
 ### b) Artwork
 
-Concept art is stored and shared within `/artwork/`.  Any _official artwork_ will be linked or copied to the appropriate asset's folder _see Assets below_.
+Concept art is stored and shared within `/artwork/`.  Any _official artwork_ will be linked or copied to the appropriate asset's folder _see Workspace below_.
 
 Contents here are organized as the artists want.  Predictable structure will be maintained in the assets area.
 
 
-### c) Assets
+### c) Workspace
 
-Store working files and output for official game assets within `/assets/`.
+Store working files and output for official game assets within `/workspace/`.
 Depending on the project, certain asset types and workflows will be needed.
 
 This area is for source files such as _Maya, Photoshop, Modo, Zbrush, etc..._
 which are responsible for generating final assets for the game.
 
-> This is not to be confused with "Unity Assets" which are stored within the `/unity/...` area
-
 Below are a few common __asset types__ and corresponding __file structures__ to consider:
 
 - **Character** (deforming rig)
 
-        /assets/char/Minion_A/
-        /assets/char/Minion_A/Animation/
-        /assets/char/Minion_A/Artwork/
-        /assets/char/Minion_A/Exports/
-        /assets/char/Minion_A/Geometry/
-        /assets/char/Minion_A/Texture/
-        /assets/char/Minion_A/Reference/
-        /assets/char/Minion_A/Rig/
+        /workspace/char/Minion_A/
+        /workspace/char/Minion_A/Animation/
+        /workspace/char/Minion_A/Artwork/
+        /workspace/char/Minion_A/Exports/
+        /workspace/char/Minion_A/Geometry/
+        /workspace/char/Minion_A/Texture/
+        /workspace/char/Minion_A/Reference/
+        /workspace/char/Minion_A/Rig/
 
 
 - **Prop** (non-deforming rig)
 
-        /assets/prop/Sword_Worldslayer/
-        /assets/prop/Sword_Worldslayer/Animation/
-        /assets/prop/Sword_Worldslayer/Artwork/
-        /assets/prop/Sword_Worldslayer/Geometry/
-        /assets/prop/Sword_Worldslayer/Texture/
-        /assets/prop/Sword_Worldslayer/Reference/
-        /assets/prop/Sword_Worldslayer/Rig/
+        /workspace/prop/Sword_Worldslayer/
+        /workspace/prop/Sword_Worldslayer/Animation/
+        /workspace/prop/Sword_Worldslayer/Artwork/
+        /workspace/prop/Sword_Worldslayer/Geometry/
+        /workspace/prop/Sword_Worldslayer/Texture/
+        /workspace/prop/Sword_Worldslayer/Reference/
+        /workspace/prop/Sword_Worldslayer/Rig/
 
 
 - **Environment** (no rig)
 
-        /assets/env/Battle_Arena_A/
-        /assets/env/Battle_Arena_A/Reference/
-        /assets/env/Battle_Arena_A/Concept/
-        /assets/env/Battle_Arena_A/Geometry/
-        /assets/env/Battle_Arena_A/Texture/
-        /assets/env/Battle_Arena_A/Lighting/
+        /workspace/env/Battle_Arena_A/
+        /workspace/env/Battle_Arena_A/Reference/
+        /workspace/env/Battle_Arena_A/Concept/
+        /workspace/env/Battle_Arena_A/Geometry/
+        /workspace/env/Battle_Arena_A/Texture/
+        /workspace/env/Battle_Arena_A/Lighting/
 
 
 #### Asset Versions and Exports
