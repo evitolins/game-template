@@ -268,9 +268,10 @@ fi
 #    pointer file instead.  You can assume any file size listed over ~130b is
 #    not being tracked.
 #
+ext_ignore_list=("unity" "asset")
 hard_limit_human=$(echo $HARD_LIMIT| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
 echo -e "${BLD}3. Block files larger than ${hard_limit_human} from being committed without using LFS tracking${N}"
-list_new_or_modified_files | check_file_size ${HARD_LIMIT} ${SOFT_LIMIT}
+list_new_or_modified_files | check_file_size ${HARD_LIMIT} ${SOFT_LIMIT} ${ext_ignore_list[@]}
 files_too_large=$?
 
 # TODO: Add code examples to track all blocked extensions
