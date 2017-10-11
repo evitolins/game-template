@@ -171,10 +171,21 @@ unmunge()
 check_file_size()
 {
     hard_limit=$1
-    hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
     soft_limit=$2
+    ext_ignore_list=("${@:3}") # argument list, removing first 2
+    hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
     soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
     n=0
+
+    # validate first 2 arguments as numbers
+    re='^[0-9]+$'
+    if ! [[ $1 =~ $re ]] ; then
+       echo -e "   $ICON_NEGATIVE Provided hard_limit \"${1}\" not valid" >&2; exit 1
+    fi
+    if ! [[ $2 =~ $re ]] ; then
+       echo -e "   $ICON_NEGATIVE Provided soft_limit \"${2}\" not valid" >&2; exit 1
+    fi
+
     while read -r munged_filename
     do
         f=$(unmunge "$munged_filename")
@@ -184,6 +195,13 @@ check_file_size()
         filename=$(basename "$f")
         ext="${filename##*.}"
 
+        # Ignore needed exts
+        if [[ " ${ext_ignore_list[@]} " =~ " ${ext} " ]]; then
+            echo -e "      $ICON_INFO Size check ignored for ${filename}"
+            continue
+        fi
+        
+        # Count files that exceed the given limits
         if [ "$s" -gt $hard_limit ]
         then
             echo -e "   $ICON_NEGATIVE Exceeded hard size limit ($hard_limit_human): $munged_filename ($s_human)"
