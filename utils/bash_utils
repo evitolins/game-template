@@ -108,6 +108,7 @@ vercomp () {
 
 
 vercomp_char () {
+    local op
     case $1 in
         0) op='=';;
         1) op='>';;
@@ -119,12 +120,7 @@ vercomp_char () {
 
 testvercomp () {
     vercomp $1 $2
-    case $? in
-        0) op='=';;
-        1) op='>';;
-        2) op='<';;
-    esac
-    if [[ $op != $3 ]]
+    if [[ $(vercomp_char $?) != $3 ]]
     then
         # echo "FAIL: Expected '$3', Actual '$op', Arg1 '$1', Arg2 '$2'"
         echo 1
@@ -175,10 +171,21 @@ unmunge()
 check_file_size()
 {
     hard_limit=$1
-    hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
     soft_limit=$2
+    ext_ignore_list=("${@:3}") # argument list, removing first 2
+    hard_limit_human=$(echo $hard_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
     soft_limit_human=$(echo $soft_limit| awk '{ foo = $1 / 1024 / 1024 ; print foo "MB" }')
     n=0
+
+    # validate first 2 arguments as numbers
+    re='^[0-9]+$'
+    if ! [[ $1 =~ $re ]] ; then
+       echo -e "   $ICON_NEGATIVE Provided hard_limit \"${1}\" not valid" >&2; exit 1
+    fi
+    if ! [[ $2 =~ $re ]] ; then
+       echo -e "   $ICON_NEGATIVE Provided soft_limit \"${2}\" not valid" >&2; exit 1
+    fi
+
     while read -r munged_filename
     do
         f=$(unmunge "$munged_filename")
@@ -188,6 +195,13 @@ check_file_size()
         filename=$(basename "$f")
         ext="${filename##*.}"
 
+        # Ignore needed exts
+        if [[ " ${ext_ignore_list[@]} " =~ " ${ext} " ]]; then
+            echo -e "      $ICON_INFO Size check ignored for ${filename}"
+            continue
+        fi
+        
+        # Count files that exceed the given limits
         if [ "$s" -gt $hard_limit ]
         then
             echo -e "   $ICON_NEGATIVE Exceeded hard size limit ($hard_limit_human): $munged_filename ($s_human)"
@@ -222,6 +236,15 @@ string_contains() {
 # http://stackoverflow.com/questions/8063228/how-do-i-check-if-a-variable-exists-in-a-list-in-bash
 contains() {
     [[ "$1" =~ (^|[[:space:]])"$2"($|[[:space:]]) ]] && return 0 || return 1
+}
+
+
+# https://stackoverflow.com/questions/3685970/check-if-a-bash-array-contains-a-value
+array_contains () {
+  local e match="$1"
+  shift
+  for e; do [[ "$e" == "$match" ]] && return 0; done
+  return 1
 }
 
 

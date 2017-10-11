@@ -10,6 +10,30 @@
 #     Because of the link, any updated scripts will automatically be applied.
 #     However, if any new hooks have been added, this script must be updated
 #     and run again.
-#   
+#
+# Todo:
+# 
+#     Add loop to automatically detect and install available hooks
+#     
 
-ln -s ../../utils/git-hooks/pre-commit .git/hooks/pre-commit
+readonly HOOKS_PATH=".git/hooks/"
+readonly UTILS_HOOKS_PATH="../../utils/git-hooks/"
+
+# pre-commit -----------------------------
+SCRIPT_NAME="pre-commit"
+
+# Remove existing hook
+if [[ -e "${HOOKS_PATH}${SCRIPT_NAME}" ]]
+then
+    rm ${HOOKS_PATH}${SCRIPT_NAME}
+    echo "${HOOKS_PATH}${SCRIPT_NAME} was found and removed."
+fi
+
+# Install hook
+ln -s "${UTILS_HOOKS_PATH}${SCRIPT_NAME}" "${HOOKS_PATH}${SCRIPT_NAME}"
+if [ $? -eq 0 ]; then
+    echo "${HOOKS_PATH}${SCRIPT_NAME} hook was (re)installed."
+else
+    echo "${HOOKS_PATH}${SCRIPT_NAME} hook was installation FAILED."
+fi
+
