@@ -108,6 +108,7 @@ vercomp () {
 
 
 vercomp_char () {
+    local op
     case $1 in
         0) op='=';;
         1) op='>';;
@@ -119,12 +120,7 @@ vercomp_char () {
 
 testvercomp () {
     vercomp $1 $2
-    case $? in
-        0) op='=';;
-        1) op='>';;
-        2) op='<';;
-    esac
-    if [[ $op != $3 ]]
+    if [[ $(vercomp_char $?) != $3 ]]
     then
         # echo "FAIL: Expected '$3', Actual '$op', Arg1 '$1', Arg2 '$2'"
         echo 1
