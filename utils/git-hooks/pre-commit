@@ -29,12 +29,6 @@
 #         - 4a. if so, stop the commit and suggest renaming the files before
 #               committing
 #
-#
-# Helpful snippets:
-#    git status --porcelain
-#    git lfs status --porcelain
-#
-#
 # Reference:
 #    http://stackoverflow.com/questions/3878624/how-do-i-programmatically-determine-if-there-are-uncommited-changes
 #
@@ -288,19 +282,18 @@ fi
 echo -e "${BLD}4. Check if files contain an uppercase extension${N}"
 while read status_feed
 do
-    f=$(echo $status_feed | awk '{print $2}')
-    filename=$(basename "$f")
+    filepath=$(echo $status_feed)
+    filename=$(basename "$filepath")
     ext="${filename##*.}"
-    filename="${filename%.*}"
-    path_no_extension="${f%.*}"
     ext_lowercase=$(echo "$ext" | awk '{print tolower($0)}')
+    filepath_no_extension="${filepath%.*}"
     if [[ $ext =~ [A-Z] ]] ;
     then
-        echo -e "   $ICON_NEGATIVE $f can not have an uppercase file extension." 
-        echo -e "      $ICON_INFO please rename using ${CODE} git mv $f ${path_no_extension}.${ext_lowercase} ${N}" 
+        echo -e "   $ICON_NEGATIVE ${filepath} can not have an uppercase file extension." 
+        echo -e "      $ICON_INFO please rename using ${CODE} git mv \"${filepath}\" \"${filepath_no_extension}.${ext_lowercase}\" ${N}" 
         commit_failure
     fi
-done < <(git lfs status --porcelain)
+done < <(list_new_or_modified_files)
 
 
 
@@ -313,4 +306,4 @@ commit_success
 
 
 # BLOCK COMMIT SUCCESS FOR TESTING
-# echo -e "p.s. - Just kidding, commit success is disabled for testing.\n"; exit 1;
+echo -e "p.s. - Just kidding, commit success is disabled for testing.\n"; exit 1;
