@@ -306,4 +306,4 @@ commit_success
 
 
 # BLOCK COMMIT SUCCESS FOR TESTING
-echo -e "p.s. - Just kidding, commit success is disabled for testing.\n"; exit 1;
+# echo -e "p.s. - Just kidding, commit success is disabled for testing.\n"; exit 1;
